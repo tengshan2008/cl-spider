@@ -2,6 +2,7 @@ from minio import Minio
 from minio.error import (ResponseError, BucketAlreadyOwnedByYou,
                          BucketAlreadyExists)
 
+
 class Uploader:
     def __init__(self, config) -> None:
         self.minioClient = Minio(config['endpoint'],

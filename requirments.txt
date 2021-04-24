@@ -4,3 +4,4 @@ Flask-SQLAlchemy==2.5.1
 loguru
 requests
 mechanicalsoup
+fake-useragent

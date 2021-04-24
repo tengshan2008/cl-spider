@@ -1,51 +1,74 @@
-from typing import Dict, Text
-from cl_spider.spiders.spider import Spider
-
-def download_image(url: Text):
-    with Browser() as browser:
-        response = browser.open(url)
-
-
-
-class PictureSpider(Spider):
-    def __init__(self, headers: Dict[Text, Text] = None) -> None:
-        super().__init__(headers=headers)
-
-    def parse_html(self):
-        pass
 import time
 import random
-from typing import Dict, Optional, Text, List
+from typing import Any, Dict, Optional, Text, List
 
-from cl_spider.spiders.spider import Spider
+from bs4 import BeautifulSoup
+
+from cl_spider.spiders.spider import Spider, format_url
 from cl_spider.app.models import Picture
 from cl_spider.spiders.manager import Manager
 
 WAIT_TIME_MIN = 1
 WAIT_TIME_MAX = 5
 
+
 def download_image(url):
     pass
+
 
 class PictureManager(Manager):
     def __init__(self) -> None:
         super().__init__()
 
+
 class PictureSpider(Spider):
     def __init__(self, headers: Dict[Text, Text] = None,
-                    manager: Optional[PictureManager] = None,) -> None:
+                 manager: Optional[PictureManager] = None,) -> None:
         super().__init__(headers=headers)
         self.manager = manager if manager else PictureManager()
-    
+
     @property
-    def random_sleep(self, min:Optional[int]=WAIT_TIME_MIN, max: Optional[int]=WAIT_TIME_MAX,) -> None:
+    def random_sleep(self, min: Optional[int] = WAIT_TIME_MIN, max: Optional[int] = WAIT_TIME_MAX,) -> None:
         time.sleep(random.randint(min, max))
 
-    def load_data(self, url):
-        pass
+    def load_data(self, url: Text) -> BeautifulSoup:
+        return self.open(url)
 
-    def parse_data(self, data) -> Dict:
+    def parse_title(self, url: Text, title: Text, length_of_imgs: int) -> Text:
+        tid = url.split('/')[-1][:-5]
+        title = self.format_string(title)
+        title = title.replace("技術討論區草榴社區", "")
+        return f"{title}_[{length_of_imgs}P]_{tid}"
+
+    def parse_imgs(self, imgs: List[Any]):
+        for i, img in enumerate(imgs):
+            link = ""
+            if "data-src" in img.attrs:
+                link = img["data-src"]
+            elif "data-ssa" in img.attrs:
+                link = img["data-ssa"]
+            elif "ess-data" in img.attrs:
+                link = img["ess-data"]
+            else:
+                logger.warning()
+                continue
+
+            ext = link.split('.')[-1]
+            if len(ext) > 7:
+                continue
+            name = f"{i+1}.{ext}"
+
+            yield (link, name)
+
+    def parse_data(self, url: Text, data: BeautifulSoup) -> Dict:
         parsed_data = {}
+
+        imgs = data.body.find_all('img')
+        title = data.head.title.string.strip()
+
+        parsed_data['title'] = self.parse_title(url, title, len(imgs))
+        parsed_data['imgs'] = list(self.parse_imgs(imgs))
+
         return parsed_data
 
     def save_data(self, parse_data: Dict) -> None:
