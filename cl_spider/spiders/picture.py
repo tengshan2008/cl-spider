@@ -1,6 +1,4 @@
-import random
-import time
-from typing import Any, Dict, List, Optional, Text
+from typing import Any, Dict, Optional, Set, Text
 
 from bs4 import BeautifulSoup
 from cl_spider.app.models import Picture
@@ -8,12 +6,9 @@ from cl_spider.spiders.manager import Manager
 from cl_spider.spiders.spider import Spider
 from loguru import logger
 
-WAIT_TIME_MIN = 1
-WAIT_TIME_MAX = 5
 
-
-def download_image(url):
-    pass
+IMG_EXTS = ['png', 'jpg', 'gif']
+IMG_ATTRS = ['data-src', 'data-ssa', 'ess-data']
 
 
 class PictureManager(Manager):
@@ -27,56 +22,72 @@ class PictureSpider(Spider):
         super().__init__(headers=headers)
         self.manager = manager if manager else PictureManager()
 
-    @property
-    def random_sleep(self, min: Optional[int] = WAIT_TIME_MIN, max: Optional[int] = WAIT_TIME_MAX,) -> None:
-        time.sleep(random.randint(min, max))
-
     def load_data(self, url: Text) -> BeautifulSoup:
+        logger.info(f"route is '{self.format_url(url)}', have loaded.")
         return self.open(url)
 
-    def parse_title(self, url: Text, data: BeautifulSoup, length_of_imgs: int) -> Text:
+    def parse_title(self, url: Text, data: BeautifulSoup) -> Text:
         title = data.head.title.string.strip()
 
         tid = url.split('/')[-1][:-5]
         title = self.format_string(title)
         title = title.replace("技術討論區草榴社區", "")
 
-        if f"[{length_of_imgs}P]" in title:
-            title = title.replace(f"[{length_of_imgs}P]", "")
-        return f"{title}_[{length_of_imgs}P]_{tid}"
+        if f"[{self.number_of_imgs}P]" in title:
+            title = title.replace(f"[{self.number_of_imgs}P]", "")
+        return f"{title}_[{self.number_of_imgs}P]_{tid}"
 
     def parse_imgs(self, data: BeautifulSoup):
         imgs = data.body.find_all('img')
         for i, img in enumerate(imgs):
             link = ""
-            if "data-src" in img.attrs:
-                link = img["data-src"]
-            elif "data-ssa" in img.attrs:
-                link = img["data-ssa"]
-            elif "ess-data" in img.attrs:
-                link = img["ess-data"]
+            for attr in IMG_ATTRS:
+                if attr in img.attrs:
+                    link = img[attr]
+                    break
             else:
-                logger.warning()
+                logger.warning(f'unknow attr {img.attrs}')
                 continue
 
-            ext = link.split('.')[-1]
-            if len(ext) > 7:
+            if '.' not in link:
+                logger.warning(f'route is {self.format_url(link)}, not found ext')
+                continue
+            ext = link.split('.')[-1].lower()
+
+            if ext not in IMG_EXTS:
+                logger.warning(f'route is {self.format_url(link)}, ext is {ext}, not recognized')
                 continue
             name = f"{i+1}.{ext}"
 
             yield (link, name)
 
-    def parse_data(self, url: Text, data: BeautifulSoup) -> Dict:
-        parsed_data = {}
+    @property
+    def number_of_imgs(self):
+        return len(self.parsed_data.get('imgs', []))
 
-        parsed_data['imgs'] = list(self.parse_imgs(data))
-        parsed_data['title'] = self.parse_title(url, data, len(parsed_data['imgs']))
+    def parse_data(self, url: Text, data: BeautifulSoup) -> Dict[Text, Any]:
+        if data is None:
+            self.manager.add_new_url(url)
+            return None
 
-        logger.info(f"route is '{self.format_url(url)}', have parsed.")
-        return parsed_data
+        self.parsed_data = {}
 
-    def save_data(self, parse_data: Dict) -> None:
-        pass
+        self.parsed_data['imgs'] = list(self.parse_imgs(data))
+        self.parsed_data['title'] = self.parse_title(url, data)
+
+        logger.info(f"route is '{self.format_url(url)}', have parsed {self.number_of_imgs} imgs.")
+        return self.parsed_data
+
+    def save_data(self, url: Text, parsed_data: Dict[Text, Any]) -> None:
+        if parsed_data is None or self.number_of_imgs == 0:
+            self.manager.add_new_url(url)
+            return None
+
+        for url, name in parsed_data["imgs"]:
+            # response = self.download(url)
+            # response.content
+            print(url, name)
+
 
     def get_latest(self) -> None:
         # 是否有待取的 URL
@@ -87,6 +98,12 @@ class PictureSpider(Spider):
             # 获取网页信息
             data = self.load_data(url)
             # 解析网页信息
-            parsed_data = self.parse_data(data)
+            parsed_data = self.parse_data(url, data)
             # 保留有效信息
-            self.save_data(parsed_data)
+            self.save_data(url, parsed_data)
+
+    @classmethod
+    def load(cls, urlset: Set[Text]) -> "PictureSpider":
+        manager = PictureManager()
+        manager.add_new_urls(urlset=urlset)
+        return cls(manager=manager)
