@@ -4,5 +4,5 @@ Flask-SQLAlchemy==2.5.1
 loguru==0.5.3
 requests==2.25.1
 mechanicalsoup==1.0.0
-fake-useragent
+fake-useragent==0.1.11
 minio==7.0.3
