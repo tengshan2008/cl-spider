@@ -6,7 +6,6 @@ from cl_spider.spiders.manager import Manager
 from cl_spider.spiders.spider import Spider
 from loguru import logger
 
-
 IMG_EXTS = ['png', 'jpg', 'gif']
 IMG_ATTRS = ['data-src', 'data-ssa', 'ess-data']
 
@@ -17,8 +16,11 @@ class PictureManager(Manager):
 
 
 class PictureSpider(Spider):
-    def __init__(self, headers: Dict[Text, Text] = None,
-                 manager: Optional[PictureManager] = None,) -> None:
+    def __init__(
+        self,
+        headers: Dict[Text, Text] = None,
+        manager: Optional[PictureManager] = None,
+    ) -> None:
         super().__init__(headers=headers)
         self.manager = manager if manager else PictureManager()
 
@@ -50,12 +52,15 @@ class PictureSpider(Spider):
                 continue
 
             if '.' not in link:
-                logger.warning(f'route is {self.format_url(link)}, not found ext')
+                logger.warning(
+                    f'route is {self.format_url(link)}, not found ext')
                 continue
             ext = link.split('.')[-1].lower()
 
             if ext not in IMG_EXTS:
-                logger.warning(f'route is {self.format_url(link)}, ext is {ext}, not recognized')
+                logger.warning(
+                    f'route is {self.format_url(link)}, ext is {ext}, not '
+                    f'recognized')
                 continue
             name = f"{i+1}.{ext}"
 
@@ -75,7 +80,8 @@ class PictureSpider(Spider):
         self.parsed_data['imgs'] = list(self.parse_imgs(data))
         self.parsed_data['title'] = self.parse_title(url, data)
 
-        logger.info(f"route is '{self.format_url(url)}', have parsed {self.number_of_imgs} imgs.")
+        logger.info(f"route is '{self.format_url(url)}', have parsed "
+                    f"{self.number_of_imgs} imgs.")
         return self.parsed_data
 
     def save_data(self, url: Text, parsed_data: Dict[Text, Any]) -> None:
@@ -87,7 +93,6 @@ class PictureSpider(Spider):
             # response = self.download(url)
             # response.content
             print(url, name)
-
 
     def get_latest(self) -> None:
         # 是否有待取的 URL

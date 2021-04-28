@@ -23,34 +23,40 @@ TIMEOUT = (10, 30)
 MAX_RETRIES = 3
 
 
-
 class Spider:
     def __init__(self, headers: Dict[Text, Text] = None) -> None:
         ua = FakeUserAgent()
         # ua.update()
         if headers is None:
-            self.headers = {
-                'User-Agent': ua.random
-            }
+            self.headers = {'User-Agent': ua.random}
         else:
             self.headers = headers
 
-    def _open(self, url: Text, soup: Optional[BeautifulSoup] = None, response: Optional[Response] = None, **kwargs) -> Tuple[BeautifulSoup, Response]:
+    def _open(
+        self,
+        url: Text,
+        soup: Optional[BeautifulSoup] = None,
+        response: Optional[Response] = None,
+        **kwargs,
+    ) -> Tuple[BeautifulSoup, Response]:
         with Browser(user_agent=self.headers['User-Agent'], **kwargs) as b:
             try:
                 response = b.open(url, timeout=TIMEOUT)
             except REQUESTS_EXCEPTION as e:
-                logger.error(f"route is '{self.format_url(url)}', error is {e}.")
+                logger.error(
+                    f"route is '{self.format_url(url)}', error is {e}.")
             except Exception as e:
-                logger.error(f"route is '{self.format_url(url)}', error is {e}.")
+                logger.error(
+                    f"route is '{self.format_url(url)}', error is {e}.")
             else:
                 soup = b.page
-                
+
         if response is None:
             logger.warning(f"route is {self.format_url(url)}, request failed.")
             return None
         if soup is None:
-            logger.warning(f"route is {self.format_url(url)}, parse soup failed.")
+            logger.warning(
+                f"route is {self.format_url(url)}, parse soup failed.")
             return None
         if '無法找到頁面' in soup.head.title.string:
             logger.warning(f"route is {self.format_url(url)}, page 404.")
@@ -82,9 +88,19 @@ class Spider:
 
     @staticmethod
     def format_string(text: Text) -> Text:
-        norm = {'\\': '', '/': '', ':': '：', '*': '',
-                '?': '？', '<': '《', '>': '》', '|': '',
-                '(': '（', ')': '）', ' ': ''}
+        norm = {
+            '\\': '',
+            '/': '',
+            ':': '：',
+            '*': '',
+            '?': '？',
+            '<': '《',
+            '>': '》',
+            '|': '',
+            '(': '（',
+            ')': '）',
+            ' ': ''
+        }
 
         for _old, _new in norm.items():
             text = text.replace(_old, _new)
@@ -92,5 +108,9 @@ class Spider:
         return text
 
     @property
-    def random_sleep(self, min: Optional[int] = WAIT_TIME_MIN, max: Optional[int] = WAIT_TIME_MAX,) -> None:
+    def random_sleep(
+        self,
+        min: Optional[int] = WAIT_TIME_MIN,
+        max: Optional[int] = WAIT_TIME_MAX,
+    ) -> None:
         time.sleep(random.randint(min, max))
