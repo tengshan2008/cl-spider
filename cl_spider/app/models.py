@@ -8,7 +8,7 @@ class Novel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     origin_id = db.Column(db.String(255), default='UNKNOW')
     title = db.Column(db.String(255), default='UNKNOW')
-    authoer = db.Column(db.String(255), nullable=True)
+    author = db.Column(db.String(255), nullable=True)
     public_datetime = db.Column(db.DateTime, nullable=True)
     category = db.Column(db.String(255), nullable=True)
     link = db.Column(db.String(255), nullable=True)
