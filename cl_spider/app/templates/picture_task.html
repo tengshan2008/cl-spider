@@ -1,0 +1,9 @@
+{% extends 'admin/master.html' %}
+{% block body %}
+{% import 'bootstrap/wtf.html' as wtf %}
+<form class="form", method="post">
+    {{ form.hidden_tag() }}
+    {{ wtf.form_field(form.url) }}
+    {{ wtf.form_field(form.submit) }}
+</form>
+{% endblock %}
