@@ -24,7 +24,7 @@ class Novel(db.Model):
         return self.name
 
     def __repr__(self):
-        return f"<novel {self.name}>"
+        return f"<Novel {self.name}>"
 
 
 class Picture(db.Model):
@@ -38,4 +38,4 @@ class Picture(db.Model):
         return self.name
 
     def __repr__(self):
-        return f"<novel {self.name}>"
+        return f"<Picture {self.name}>"

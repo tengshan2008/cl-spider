@@ -1,7 +1,9 @@
 from typing import Any, Dict, Optional, Set, Text
 
 from bs4 import BeautifulSoup
+from cl_spider.app import db
 from cl_spider.app.models import Picture
+from cl_spider.spiders.file_uploader import Uploader
 from cl_spider.spiders.manager import Manager
 from cl_spider.spiders.spider import Spider
 from loguru import logger
@@ -28,10 +30,13 @@ class PictureSpider(Spider):
         logger.info(f"route is '{self.format_url(url)}', have loaded.")
         return self.open(url)
 
+    def parse_tid(self, url: Text) -> Text:
+        return url.split('/')[-1][:-5]
+
     def parse_title(self, url: Text, data: BeautifulSoup) -> Text:
         title = data.head.title.string.strip()
 
-        tid = url.split('/')[-1][:-5]
+        tid = self.parse_tid(url)
         title = self.format_string(title)
         title = title.replace("技術討論區草榴社區", "")
 
@@ -64,7 +69,7 @@ class PictureSpider(Spider):
                 continue
             name = f"{i+1}.{ext}"
 
-            yield (link, name)
+            yield (link, name, ext)
 
     @property
     def number_of_imgs(self):
@@ -78,21 +83,34 @@ class PictureSpider(Spider):
         self.parsed_data = {}
 
         self.parsed_data['imgs'] = list(self.parse_imgs(data))
+        self.parsed_data['tid'] = self.parse_tid(url)
         self.parsed_data['title'] = self.parse_title(url, data)
 
         logger.info(f"route is '{self.format_url(url)}', have parsed "
                     f"{self.number_of_imgs} imgs.")
         return self.parsed_data
 
-    def save_data(self, url: Text, parsed_data: Dict[Text, Any]) -> None:
+    def save_data(self, url: Text, parsed_data: Dict[Text, Any],
+                  config: Dict[Text, Any]) -> None:
         if parsed_data is None or self.number_of_imgs == 0:
             self.manager.add_new_url(url)
             return None
 
-        for url, name in parsed_data["imgs"]:
-            # response = self.download(url)
-            # response.content
-            print(url, name)
+        bucket_name = f"picture/{parsed_data['title']}"
+        uploader = Uploader(config)
+        uploader.create_bucket(bucket_name)
+
+        for url, name, ext in parsed_data["imgs"]:
+            response = self.download(url)
+            uploader.put_object_with_file_type(
+                bucket_name,
+                name,
+                response.content,
+                file_type=ext,
+            )
+            picture = Picture()
+            db.session.add(picture)
+            db.session.commit()
 
     def get_latest(self) -> None:
         # 是否有待取的 URL
