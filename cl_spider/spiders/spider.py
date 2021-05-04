@@ -54,11 +54,11 @@ class Spider:
         if response is None:
             logger.warning(f"route is {self.format_url(url)}, request failed.")
             return None
-        if soup is None:
+        if response is None and soup is None:
             logger.warning(
                 f"route is {self.format_url(url)}, parse soup failed.")
             return None
-        if '無法找到頁面' in soup.head.title.string:
+        if soup and '無法找到頁面' in soup.head.title.string:
             logger.warning(f"route is {self.format_url(url)}, page 404.")
             return None
 
@@ -72,7 +72,7 @@ class Spider:
         adapter = HTTPAdapter(max_retries=MAX_RETRIES)
         requests_adapters = {'http://': adapter, 'https://': adapter}
 
-        response, _ = self._open(url, requests_adapters=requests_adapters)
+        _, response = self._open(url, requests_adapters=requests_adapters)
         return response
 
     @staticmethod
@@ -97,6 +97,7 @@ class Spider:
             '<': '《',
             '>': '》',
             '|': '',
+            '-': '',
             '(': '（',
             ')': '）',
             ' ': ''
