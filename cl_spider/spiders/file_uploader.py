@@ -1,18 +1,31 @@
+from io import BytesIO
 from typing import Any, Dict, Optional, Text
-from minio import Minio
+
+from cl_spider.config import MINIO_ACCESS_KEY, MINIO_ENDPOINT, MINIO_SECRET_KEY
 # from minio.error import (ResponseError, BucketAlreadyOwnedByYou,
 #                          BucketAlreadyExists)
 from loguru import logger
+from minio import Minio
+
+IMG_EXTS = ['png', 'jpg', 'jpeg', 'gif']
 
 
 class Uploader:
-    def __init__(self, config: Dict[Text, Any]) -> None:
-        self.minioClient = Minio(
-            config['endpoint'],
-            access_key=config['access_key'],
-            secret_key=config['secret_key'],
-            secure=False,
-        )
+    def __init__(self, metadata: Optional[Dict[Text, Any]] = None) -> None:
+        if metadata is None:
+            self.minioClient = Minio(
+                MINIO_ENDPOINT,
+                access_key=MINIO_ACCESS_KEY,
+                secret_key=MINIO_SECRET_KEY,
+                secure=False,
+            )
+        else:
+            self.minioClient = Minio(
+                metadata['endpoint'],
+                access_key=metadata['access_key'],
+                secret_key=metadata['secret_key'],
+                secure=False,
+            )
 
     def make_bucket(self,
                     bucket_name: Text,
@@ -23,6 +36,13 @@ class Uploader:
         #     logger.warning(f"bucket already owned by you. {err}")
         # except BucketAlreadyExists as err:
         #     logger.warning(f"bucket already exists. {err}")
+        except Exception as err:
+            logger.error(f"response error: {err}")
+            raise
+
+    def remove_bucket(self, bucket_name: Text) -> None:
+        try:
+            self.minioClient.remove_bucket(bucket_name)
         except Exception as err:
             logger.error(f"response error: {err}")
             raise
@@ -38,17 +58,13 @@ class Uploader:
         self,
         bucket_name: Text,
         object_name: Text,
-        data: bytes,
+        data: BytesIO,
         length: Optional[int] = None,
         file_type: Optional[Text] = None,
     ):
-        length_data = length if length else len(data)
-        if file_type == "gif":
-            content_type = "image/gif"
-        elif file_type == "png":
-            content_type = "image/png"
-        elif file_type in ["jpg", "jpeg"]:
-            content_type = "image/jpeg"
+        length_data = length if length else len(data.getvalue())
+        if file_type in IMG_EXTS:
+            content_type = f"image/{file_type}"
         else:
             logger.warning("unknow content type")
             return
@@ -62,8 +78,18 @@ class Uploader:
             logger.error(f"response error: {err}")
             raise
         else:
-            print(f"created {result.object_name} object; etag: {result.etag}, "
-                  f"version-id: {result.version_id}")
+            logger.info(
+                f"created {result.object_name} object; etag: {result.etag}")
+
+    def get_object_share(self, bucket_name: Text, object_name: Text):
+        try:
+            share = self.minioClient.presigned_get_object(
+                bucket_name, object_name)
+        except Exception as err:
+            logger.error(f"response error: {err}")
+            raise
+        else:
+            return share
 
     def create_bucket(self, bucket_name: Text) -> None:
         if not self.bucket_exists(bucket_name):
