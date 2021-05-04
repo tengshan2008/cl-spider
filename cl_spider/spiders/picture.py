@@ -1,14 +1,16 @@
+from datetime import datetime
+from io import BytesIO
 from typing import Any, Dict, Optional, Set, Text
 
 from bs4 import BeautifulSoup
 from cl_spider.app import db
 from cl_spider.app.models import Picture
-from cl_spider.spiders.file_uploader import Uploader
+from cl_spider.config import PICTURE_BUCKET_NAME
+from cl_spider.spiders.file_uploader import IMG_EXTS, Uploader
 from cl_spider.spiders.manager import Manager
 from cl_spider.spiders.spider import Spider
 from loguru import logger
 
-IMG_EXTS = ['png', 'jpg', 'gif']
 IMG_ATTRS = ['data-src', 'data-ssa', 'ess-data']
 
 
@@ -36,13 +38,26 @@ class PictureSpider(Spider):
     def parse_title(self, url: Text, data: BeautifulSoup) -> Text:
         title = data.head.title.string.strip()
 
-        tid = self.parse_tid(url)
+        title = title.replace('技術討論區', '')
+        title = title.replace('草榴社區', '')
+        title = title.replace('t66y.com', '')
         title = self.format_string(title)
-        title = title.replace("技術討論區草榴社區", "")
 
         if f"[{self.number_of_imgs}P]" in title:
             title = title.replace(f"[{self.number_of_imgs}P]", "")
-        return f"{title}_[{self.number_of_imgs}P]_{tid}"
+        return f"{title}_[{self.number_of_imgs}P]"
+
+    def parse_author(self, data: BeautifulSoup) -> Text:
+        users = data.find_all(name='div', attrs={'class': 'tpc_detail f10 fl'})
+        names = data.find_all(name='b')
+
+        if len(users) > 0:
+            return list(users[0].strings)[0]
+        elif len(names) > 0:
+            return names[3].string
+        else:
+            logger.warning("not find author")
+            return "unknow"
 
     def parse_imgs(self, data: BeautifulSoup):
         imgs = data.body.find_all('img')
@@ -53,7 +68,10 @@ class PictureSpider(Spider):
                     link = img[attr]
                     break
             else:
-                logger.warning(f'unknow attr {img.attrs}')
+                if "src" in img.attrs:
+                    logger.info(f'find other picture: {img["src"]}')
+                else:
+                    logger.warning(f'unknow attr {img.attrs}')
                 continue
 
             if '.' not in link:
@@ -82,37 +100,57 @@ class PictureSpider(Spider):
 
         self.parsed_data = {}
 
-        self.parsed_data['imgs'] = list(self.parse_imgs(data))
         self.parsed_data['tid'] = self.parse_tid(url)
+        self.parsed_data['imgs'] = list(self.parse_imgs(data))
         self.parsed_data['title'] = self.parse_title(url, data)
+        self.parsed_data['author'] = self.parse_author(data)
 
         logger.info(f"route is '{self.format_url(url)}', have parsed "
                     f"{self.number_of_imgs} imgs.")
         return self.parsed_data
 
-    def save_data(self, url: Text, parsed_data: Dict[Text, Any],
-                  config: Dict[Text, Any]) -> None:
+    def check_object_not_exists(self, url: Text) -> bool:
+        return Picture.query.filter_by(link=url).first() is None
+
+    def save_data(
+        self,
+        url: Text,
+        parsed_data: Dict[Text, Any],
+        metadata: Optional[Dict[Text, Any]] = None,
+    ) -> None:
         if parsed_data is None or self.number_of_imgs == 0:
             self.manager.add_new_url(url)
             return None
 
-        bucket_name = f"picture/{parsed_data['title']}"
-        uploader = Uploader(config)
+        bucket_name = PICTURE_BUCKET_NAME
+        uploader = Uploader(metadata)
         uploader.create_bucket(bucket_name)
 
         for url, name, ext in parsed_data["imgs"]:
-            response = self.download(url)
-            uploader.put_object_with_file_type(
-                bucket_name,
-                name,
-                response.content,
-                file_type=ext,
-            )
-            picture = Picture()
-            db.session.add(picture)
-            db.session.commit()
+            if self.check_object_not_exists(url):
+                response = self.download(url)
+                if response:
+                    object_name = f"{parsed_data['title']}/{name}"
+                    uploader.put_object_with_file_type(
+                        bucket_name,
+                        object_name,
+                        BytesIO(response.content),
+                        file_type=ext,
+                    )
+                    share = uploader.get_object_share(bucket_name, object_name)
+                    if share:
+                        picture = Picture(
+                            origin_id=parsed_data['tid'],
+                            title=object_name,
+                            author=parsed_data['author'],
+                            public_datetime=datetime.now(),
+                            link=url,
+                            share=share,
+                        )
+                        db.session.add(picture)
+                        db.session.commit()
 
-    def get_latest(self) -> None:
+    def get_latest(self, metadata: Optional[Dict[Text, Any]] = None) -> None:
         # 是否有待取的 URL
         while self.manager.has_new_url():
             self.random_sleep
@@ -123,7 +161,7 @@ class PictureSpider(Spider):
             # 解析网页信息
             parsed_data = self.parse_data(url, data)
             # 保留有效信息
-            self.save_data(url, parsed_data)
+            self.save_data(url, parsed_data, metadata)
 
     @classmethod
     def load(cls, urlset: Set[Text]) -> "PictureSpider":
