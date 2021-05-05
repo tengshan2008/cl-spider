@@ -15,8 +15,8 @@ IMG_ATTRS = ['data-src', 'data-ssa', 'ess-data']
 
 
 class PictureManager(Manager):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, limit: Optional[int] = None) -> None:
+        super().__init__(limit=limit)
 
 
 class PictureSpider(Spider):
@@ -24,9 +24,10 @@ class PictureSpider(Spider):
         self,
         headers: Dict[Text, Text] = None,
         manager: Optional[PictureManager] = None,
+        limit: Optional[int] = None,
     ) -> None:
         super().__init__(headers=headers)
-        self.manager = manager if manager else PictureManager()
+        self.manager = manager if manager else PictureManager(limit=limit)
 
     def load_data(self, url: Text) -> BeautifulSoup:
         logger.info(f"route is '{self.format_url(url)}', have loaded.")
@@ -112,13 +113,46 @@ class PictureSpider(Spider):
     def check_object_not_exists(self, url: Text) -> bool:
         return Picture.query.filter_by(link=url).first() is None
 
+    def exec_minio(
+        self,
+        uploader: Uploader,
+        bucket_name: Text,
+        object_name: Text,
+        data: bytes,
+        file_type: Text,
+    ) -> Text:
+        uploader.put_object_with_file_type(bucket_name, object_name,
+                                           BytesIO(data), file_type)
+        share = uploader.get_object_share(bucket_name, object_name)
+        return share
+
+    def exec_database(
+        self,
+        parsed_data: Dict[Text, Any],
+        title: Text,
+        link: Text,
+        share: Text,
+    ) -> None:
+        picture = Picture(
+            origin_id=parsed_data['tid'],
+            title=title,
+            author=parsed_data['author'],
+            public_datetime=datetime.now(),
+            link=link,
+            share=share,
+        )
+        db.session.add(picture)
+        db.session.commit()
+
     def save_data(
         self,
         url: Text,
         parsed_data: Dict[Text, Any],
         metadata: Optional[Dict[Text, Any]] = None,
     ) -> None:
-        if parsed_data is None or self.number_of_imgs == 0:
+        if parsed_data is None:
+            return None
+        if self.number_of_imgs == 0:
             self.manager.add_new_url(url)
             return None
 
@@ -131,24 +165,11 @@ class PictureSpider(Spider):
                 response = self.download(url)
                 if response:
                     object_name = f"{parsed_data['title']}/{name}"
-                    uploader.put_object_with_file_type(
-                        bucket_name,
-                        object_name,
-                        BytesIO(response.content),
-                        file_type=ext,
-                    )
-                    share = uploader.get_object_share(bucket_name, object_name)
+                    share = self.exec_minio(uploader, bucket_name, object_name,
+                                            response.content, ext)
                     if share:
-                        picture = Picture(
-                            origin_id=parsed_data['tid'],
-                            title=object_name,
-                            author=parsed_data['author'],
-                            public_datetime=datetime.now(),
-                            link=url,
-                            share=share,
-                        )
-                        db.session.add(picture)
-                        db.session.commit()
+                        self.exec_database(parsed_data, object_name, url,
+                                           share)
 
     def get_latest(self, metadata: Optional[Dict[Text, Any]] = None) -> None:
         # 是否有待取的 URL
