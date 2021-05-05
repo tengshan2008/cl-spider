@@ -8,6 +8,7 @@ from loguru import logger
 from minio import Minio
 
 IMG_EXTS = ['png', 'jpg', 'jpeg', 'gif']
+TXT_EXT = 'txt'
 
 
 class Uploader:
@@ -65,6 +66,8 @@ class Uploader:
         length_data = length if length else len(data.getvalue())
         if file_type in IMG_EXTS:
             content_type = f"image/{file_type}"
+        elif file_type == TXT_EXT:
+            content_type = "text/plain"
         else:
             logger.warning("unknow content type")
             return
