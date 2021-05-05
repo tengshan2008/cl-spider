@@ -21,9 +21,14 @@ def index():
     return redirect('/admin')
 
 
-def share_link_formatter(view, context, model, name):
+def link_formatter(view, context, model, name):
     field = getattr(model, name)
     return Markup(f'<a href="{field}">LINK</a>')
+
+
+def share_formatter(view, context, model, name):
+    field = getattr(model, name)
+    return Markup(f'<a href="{field}">SHARE</a>')
 
 
 def date_format(view, value):
@@ -42,6 +47,7 @@ class CustomView(ModelView):
 
 
 class NovelAdmin(CustomView):
+    column_type_formatters = MY_DEFAULT_FORMATTERS
     column_searchable_list = ('title', )
     column_labels = {
         'origin_id': 'ID',
@@ -49,13 +55,15 @@ class NovelAdmin(CustomView):
         'author': u'作者',
         'public_datetime': u'发布日期',
         'category': u'类别',
+        'link': u'链接',
+        'share': u'预览',
         'size': u'字数',
-        'created_at': u'创建日期',
         'updated_at': u'更新日期',
     }
+    column_formatters = {'link': link_formatter, 'share': share_formatter}
     column_list = list(column_labels.keys())
-    # column_details_list = ('path')
-    # column_display_actions = ('create', 'update', 'delete')
+    column_default_sort = ('updated_at', True)
+    can_set_page_size = True
     can_create, can_delete, can_edit = False, False, False
 
     def __init__(self, session, **kwargs):
@@ -74,7 +82,7 @@ class PictureAdmin(CustomView):
         'share': u'预览',
         'updated_at': u'更新日期',
     }
-    column_formatters = {'share': share_link_formatter}
+    column_formatters = {'share': share_formatter}
     column_list = list(column_labels.keys())
     column_default_sort = ('updated_at', True)
     can_set_page_size = True
@@ -84,10 +92,31 @@ class PictureAdmin(CustomView):
         super().__init__(Picture, session, **kwargs)
 
 
+class NovelTaskForm(FlaskForm):
+    url = URLField(label=u'网址：',
+                   validators=[
+                       DataRequired(message=u'网址不能为空'),
+                   ])
+    submit = SubmitField(u'提交')
+
+
 class NovelTaskView(BaseView):
     @expose('/', methods=['GET', 'POST'])
     def index(self):
-        return self.render('novel_task.html')
+        from cl_spider.spiders.novel import NovelSpider
+
+        form = NovelTaskForm()
+        if form.validate_on_submit():
+            if form.url:
+                spider = NovelSpider()
+                # executor.submit(spider.get_latest, (form.url.raw_data[0], ))
+                spider.get_latest(form.url.raw_data[0])
+                flash(u'提交成功')
+                return redirect('/admin/novel')
+            else:
+                flash(u'校验错误')
+
+        return self.render('novel_task.html', form=form)
 
 
 class PictureTaskForm(FlaskForm):
@@ -100,8 +129,6 @@ class PictureTaskForm(FlaskForm):
 
 class PictureTaskView(BaseView):
     @expose('/', methods=['GET', 'POST'])
-    # @run_async
-    # async def index(self):
     def index(self):
         from cl_spider.spiders.picture import PictureSpider
 

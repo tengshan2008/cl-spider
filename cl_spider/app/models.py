@@ -14,7 +14,6 @@ class Novel(db.Model):
     link = db.Column(db.String(255), nullable=True)
     size = db.Column(db.Integer, default=0)
     status = db.Column(db.Integer, default=0)
-    path = db.Column(db.String(255), nullable=True)
     share = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now)

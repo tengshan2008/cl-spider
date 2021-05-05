@@ -1,4 +1,9 @@
 {% extends 'admin/master.html' %}
 {% block body %}
-    task novel
+{% from 'bootstrap/form.html' import render_field %}
+<form class="form", method="post">
+    {{ form.hidden_tag() }}
+    {{ render_field(form.url) }}
+    {{ render_field(form.submit) }}
+</form>
 {% endblock %}
