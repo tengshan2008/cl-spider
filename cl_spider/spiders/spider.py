@@ -87,6 +87,15 @@ class Spider:
         return url
 
     @staticmethod
+    def format_url_host(url: Text) -> Text:
+        r = urllib.parse.urlsplit(url)
+        if r.scheme and r.netloc:
+            return f'{r.scheme}://{r.netloc}'
+        if r.netloc:
+            return f'http://{r.netloc}'
+        return url
+
+    @staticmethod
     def format_string(text: Text) -> Text:
         norm = {
             '\\': '',
