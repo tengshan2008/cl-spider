@@ -1,6 +1,7 @@
 {% extends 'admin/master.html' %}
 {% block body %}
 {% from 'bootstrap/form.html' import render_field %}
+<h1>图片任务</h1>
 <form class="form", method="post">
     {{ form.hidden_tag() }}
     {{ render_field(form.url) }}
