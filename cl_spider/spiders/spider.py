@@ -79,9 +79,9 @@ class Spider:
     def format_url(url: Text) -> Text:
         r = urllib.parse.urlsplit(url)
         if r.path and r.query and r.fragment:
-            return r.path + r.query + r.fragment
+            return f'{r.path}?{r.query}{r.fragment}'
         if r.path and r.query:
-            return r.path + r.query
+            return f'{r.path}?{r.query}'
         if r.path:
             return r.path
         return url
