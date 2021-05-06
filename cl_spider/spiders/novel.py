@@ -10,6 +10,7 @@ from cl_spider.spiders.manager import Manager
 from cl_spider.spiders.spider import Spider
 from loguru import logger
 import urllib.parse
+from datetime import datetime
 
 TID_KEY = 'tid'
 TITLE_KEY = 'title'
@@ -79,8 +80,10 @@ class NovelSpider(Spider):
         return self.open(url)
 
     def parse_tid(self, url: Text) -> Text:
-        r = urllib.parse.urlsplit(url)
-        return urllib.parse.parse_qs(r.query)[TID_KEY][0]
+        if TID_KEY in url:
+            r = urllib.parse.urlsplit(url)
+            return urllib.parse.parse_qs(r.query)[TID_KEY][0]
+        return url.split('/')[-1][:-5]
 
     def parse_title_category(self, data: BeautifulSoup) -> Tuple[Text, Text]:
         title = data.head.title.string.strip()
@@ -156,6 +159,14 @@ class NovelSpider(Spider):
         return share
 
     def exec_database(self, link: Text, share: Text, size: int) -> None:
+        _query = Novel.query.filter_by(origin_id=self.parsed_data[TID_KEY])
+        if _query.first():
+            _query.update({
+                Novel.size: str(size),
+                Novel.updated_at: datetime.now(),
+            })
+            return
+
         novel = Novel(
             origin_id=self.parsed_data[TID_KEY],
             title=self.parsed_data[TITLE_KEY],
@@ -177,8 +188,10 @@ class NovelSpider(Spider):
 
         return '\n'.join(content)
 
-    def is_need_put_or_update(self):
-        return True
+    def is_need_put_or_update(self, content: Text):
+        row = Novel.query.filter_by(
+            origin_id=self.parsed_data[TID_KEY]).first()
+        return row is None or int(row.size) < len(content)
 
     def save_data(
         self,
@@ -195,7 +208,7 @@ class NovelSpider(Spider):
         uploader.create_bucket(bucket_name)
 
         content = self.merge_content(pages)
-        if self.is_need_put_or_update():
+        if self.is_need_put_or_update(content):
             pub_date = self.parsed_data[PUBLIC_DATETIME_KEY].strftime('%Y-%m')
             object_name = f"{pub_date}/{self.parsed_data[TITLE_KEY]}.txt"
             share = self.exec_minio(uploader, bucket_name, object_name,

@@ -121,8 +121,10 @@ class PictureSpider(Spider):
         data: bytes,
         file_type: Text,
     ) -> Text:
-        uploader.put_object_with_file_type(bucket_name, object_name,
-                                           BytesIO(data), file_type)
+        uploader.put_object_with_file_type(bucket_name,
+                                           object_name,
+                                           BytesIO(data),
+                                           file_type=file_type)
         share = uploader.get_object_share(bucket_name, object_name)
         return share
 
