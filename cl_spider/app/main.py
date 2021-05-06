@@ -109,8 +109,7 @@ class NovelTaskView(BaseView):
         if form.validate_on_submit():
             if form.url:
                 spider = NovelSpider()
-                # executor.submit(spider.get_latest, (form.url.raw_data[0], ))
-                spider.get_latest(form.url.raw_data[0])
+                executor.submit(spider.get_latest, (form.url.raw_data[0]))
                 flash(u'提交成功')
                 return redirect('/admin/novel')
             else:
