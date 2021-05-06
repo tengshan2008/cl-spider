@@ -5,7 +5,7 @@ from flask_babel import Babel
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 
-executor = ThreadPoolExecutor(max_workers=2)
+executor = ThreadPoolExecutor(max_workers=4)
 # create application
 app = Flask(__name__, template_folder='templates')
 
