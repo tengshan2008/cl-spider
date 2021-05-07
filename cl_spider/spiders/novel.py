@@ -99,8 +99,12 @@ class NovelSpider(Spider):
         return title, '[UNKNOW]'
 
     def parse_public_datetime(self, data: BeautifulSoup) -> Text:
-        tipad = data.find('div', attrs={'class': 'tipad'}).stripped_strings
-        return dateutil.parser.parse(list(tipad)[1].replace('Posted:', ''))
+        tipad = data.find('div', attrs={'class': 'tipad'})
+        if tipad:
+            tipad_text = tipad.stripped_strings
+            return dateutil.parser.parse(
+                list(tipad_text)[1].replace('Posted:', ''))
+        return datetime.now()
 
     def parse_author(self, data: BeautifulSoup) -> Text:
         users = data.find_all(name='div', attrs={'class': 'tpc_detail f10 fl'})
