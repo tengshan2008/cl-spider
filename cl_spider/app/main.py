@@ -35,6 +35,14 @@ def date_format(view, value):
     return value.strftime('%Y-%m-%d %H:%M:%S')
 
 
+def title_format(view, content, model, name):
+    title = getattr(model, name)
+    if len(title) > 30:
+        short = f'{title[:15]} ... {title[-15:]}'
+        return Markup(f'<a href="#" title="{title}">{short}</a>')
+    return Markup(f'<a href="#">{title}</p>')
+
+
 MY_DEFAULT_FORMATTERS = dict(typefmt.BASE_FORMATTERS)
 MY_DEFAULT_FORMATTERS.update({
     date: date_format,
@@ -60,7 +68,11 @@ class NovelAdmin(CustomView):
         'size': u'字数',
         'updated_at': u'更新日期',
     }
-    column_formatters = {'link': link_formatter, 'share': share_formatter}
+    column_formatters = {
+        'link': link_formatter,
+        'share': share_formatter,
+        'title': title_format,
+    }
     column_list = list(column_labels.keys())
     column_default_sort = ('updated_at', True)
     can_set_page_size = True
@@ -82,7 +94,10 @@ class PictureAdmin(CustomView):
         'share': u'预览',
         'updated_at': u'更新日期',
     }
-    column_formatters = {'share': share_formatter}
+    column_formatters = {
+        'share': share_formatter,
+        'title': title_format,
+    }
     column_list = list(column_labels.keys())
     column_default_sort = ('updated_at', True)
     can_set_page_size = True
