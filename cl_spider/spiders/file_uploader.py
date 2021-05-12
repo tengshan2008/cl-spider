@@ -84,6 +84,15 @@ class Uploader:
             logger.info(
                 f"created {result.object_name} object; etag: {result.etag}")
 
+    def stat_object_size(self, bucket_name: Text, object_name: Text):
+        try:
+            obj = self.minioClient.stat_object(bucket_name, object_name)
+        except Exception as err:
+            logger.error(f"response error: {err}")
+            raise
+        else:
+            return obj.size
+
     def get_object_share(self, bucket_name: Text, object_name: Text):
         try:
             share = self.minioClient.presigned_get_object(
@@ -93,6 +102,12 @@ class Uploader:
             raise
         else:
             return share
+
+    def get_object(self, bucket_name: Text, object_name: Text):
+        # try:
+        #     data = self.minioClient.get_object(bucket_name, object_name)
+        #     data.stream()
+        pass
 
     def create_bucket(self, bucket_name: Text) -> None:
         if not self.bucket_exists(bucket_name):

@@ -2,9 +2,18 @@
 {% block body %}
 {% from 'bootstrap/form.html' import render_field %}
 <h1>小说任务</h1>
-<form class="form", method="post">
-    {{ form.hidden_tag() }}
-    {{ render_field(form.url) }}
-    {{ render_field(form.submit) }}
+<h2>单本小说</h2>
+<form class="form" , method="post">
+    {{ novel_form.hidden_tag() }}
+    {{ render_field(novel_form.url) }}
+    {{ render_field(novel_form.submit) }}
+</form>
+<h2>多本小说</h2>
+<form class="form" , method="post">
+    {{ novels_form.hidden_tag() }}
+    {{ render_field(novels_form.url) }}
+    {{ render_field(novels_form.start_page) }}
+    {{ render_field(novels_form.end_page) }}
+    {{ render_field(novels_form.submit) }}
 </form>
 {% endblock %}

@@ -1,6 +1,6 @@
 from datetime import datetime
 from io import BytesIO
-from typing import Any, Dict, Optional, Set, Text
+from typing import Any, Dict, Optional, Set, Text, Tuple
 
 from bs4 import BeautifulSoup
 from cl_spider.app import db
@@ -120,24 +120,29 @@ class PictureSpider(Spider):
         object_name: Text,
         data: bytes,
         file_type: Text,
-    ) -> Text:
+    ) -> Tuple[Text, Text]:
+        import cl_spider.utils
+
         uploader.put_object_with_file_type(bucket_name,
                                            object_name,
                                            BytesIO(data),
                                            file_type=file_type)
         share = uploader.get_object_share(bucket_name, object_name)
-        return share
+        size = uploader.stat_object_size(bucket_name, object_name)
+        return share, cl_spider.utils.bit2humanView(size)
 
     def exec_database(
         self,
         parsed_data: Dict[Text, Any],
         title: Text,
+        size: Text,
         link: Text,
         share: Text,
     ) -> None:
         picture = Picture(
             origin_id=parsed_data['tid'],
             title=title,
+            size=size,
             author=parsed_data['author'],
             public_datetime=datetime.now(),
             link=link,
@@ -167,10 +172,11 @@ class PictureSpider(Spider):
                 response = self.download(url)
                 if response:
                     object_name = f"{parsed_data['title']}/{name}"
-                    share = self.exec_minio(uploader, bucket_name, object_name,
-                                            response.content, ext)
+                    share, size = self.exec_minio(uploader, bucket_name,
+                                                  object_name,
+                                                  response.content, ext)
                     if share:
-                        self.exec_database(parsed_data, object_name, url,
+                        self.exec_database(parsed_data, object_name, size, url,
                                            share)
 
     def get_latest(self, metadata: Optional[Dict[Text, Any]] = None) -> None:

@@ -1,16 +1,17 @@
+from cl_spider.spiders.novel import IndexSpider
 from datetime import date
-
+import io
 from cl_spider.app import app, db, executor
 from cl_spider.app.models import Novel, Picture
 from flask import redirect
-from flask.helpers import flash
+from flask.helpers import flash, send_file
 from flask_admin import Admin, BaseView, expose
 from flask_admin.base import AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.model import typefmt
 from flask_wtf import FlaskForm
 from markupsafe import Markup
-from wtforms.fields.html5 import URLField
+from wtforms.fields.html5 import IntegerField, URLField
 from wtforms.fields.simple import SubmitField
 from wtforms.validators import DataRequired
 
@@ -21,6 +22,14 @@ def index():
     return redirect('/admin')
 
 
+# @app.route('/download/<text:title>', methods=['GET'])
+# def download_blob(title):
+#     _file = bytes()
+#     return send_file(io.BytesIO(_file.blob),
+#                      attachment_filename=_file.filename,
+#                      mimetype=_file.mimetype)
+
+
 def link_formatter(view, context, model, name):
     field = getattr(model, name)
     return Markup(f'<a href="{field}">LINK</a>')
@@ -28,19 +37,19 @@ def link_formatter(view, context, model, name):
 
 def share_formatter(view, context, model, name):
     field = getattr(model, name)
-    return Markup(f'<a href="{field}">SHARE</a>')
+    return Markup(f'<a href="{field}" target="_blank">SHARE</a>')
 
 
 def date_format(view, value):
-    return value.strftime('%Y-%m-%d %H:%M:%S')
+    return value.strftime('%Y-%m-%d %H:%M')
 
 
 def title_format(view, content, model, name):
     title = getattr(model, name)
-    if len(title) > 30:
-        short = f'{title[:15]} ... {title[-15:]}'
-        return Markup(f'<a href="#" title="{title}">{short}</a>')
-    return Markup(f'<a href="#">{title}</p>')
+    if len(title) > 25:
+        short = f'{title[:10]} ... {title[-15:]}'
+        return Markup(f'<p title="{title}">{short}</p>')
+    return Markup(f'<p>{title}</p>')
 
 
 MY_DEFAULT_FORMATTERS = dict(typefmt.BASE_FORMATTERS)
@@ -55,6 +64,14 @@ class CustomView(ModelView):
 
 
 class NovelAdmin(CustomView):
+    def __init__(self, session, **kwargs):
+        super().__init__(Novel, session, **kwargs)
+
+    def download_formatter(self, context, model, name):
+        # url = self.get_url('download_blob', id=model.id)
+        url = 'http://www.baidu.com'
+        return Markup(f'<a href="{url}" target="_blank">Download</a>')
+
     column_type_formatters = MY_DEFAULT_FORMATTERS
     column_searchable_list = ('title', )
     column_labels = {
@@ -64,22 +81,19 @@ class NovelAdmin(CustomView):
         'public_datetime': u'发布日期',
         'category': u'类别',
         'link': u'链接',
-        'share': u'预览',
         'size': u'字数',
         'updated_at': u'更新日期',
+        'download': u'下载',
     }
     column_formatters = {
         'link': link_formatter,
-        'share': share_formatter,
         'title': title_format,
+        'download': download_formatter,
     }
     column_list = list(column_labels.keys())
     column_default_sort = ('updated_at', True)
     can_set_page_size = True
     can_create, can_delete, can_edit = False, False, False
-
-    def __init__(self, session, **kwargs):
-        super().__init__(Novel, session, **kwargs)
 
 
 class PictureAdmin(CustomView):
@@ -89,6 +103,7 @@ class PictureAdmin(CustomView):
         'id': 'ID',
         'origin_id': 'TID',
         'title': u'标题',
+        'size': u'大小',
         'author': u'作者',
         'public_datetime': u'发布日期',
         'share': u'预览',
@@ -115,22 +130,54 @@ class NovelTaskForm(FlaskForm):
     submit = SubmitField(u'提交')
 
 
+class NovelsTaskForm(FlaskForm):
+    url = URLField(label=u'网址：',
+                   validators=[
+                       DataRequired(message=u'网址不能为空'),
+                   ])
+    start_page = IntegerField(label=u'起始页码',
+                              validators=[
+                                  DataRequired(message=u'不能为空'),
+                              ])
+    end_page = IntegerField(label=u'终止页码',
+                            validators=[
+                                DataRequired(message=u'不能为空'),
+                            ])
+    submit = SubmitField(label=u'提交')
+
+
 class NovelTaskView(BaseView):
     @expose('/', methods=['GET', 'POST'])
     def index(self):
         from cl_spider.spiders.novel import NovelSpider
 
-        form = NovelTaskForm()
-        if form.validate_on_submit():
-            if form.url:
+        novel_form = NovelTaskForm()
+        if novel_form.validate_on_submit():
+            if novel_form.url:
                 spider = NovelSpider()
-                executor.submit(spider.get_latest, (form.url.raw_data[0]))
+                url = novel_form.url.raw_data[0]
+                executor.submit(spider.get_latest, (url))
                 flash(u'提交成功')
                 return redirect('/admin/novel')
             else:
                 flash(u'校验错误')
 
-        return self.render('novel_task.html', form=form)
+        novels_form = NovelsTaskForm()
+        if novels_form.validate_on_submit():
+            if novels_form.start_page and novels_form.end_page:
+                spider = IndexSpider()
+                url = novels_form.url.raw_data[0]
+                start_page = novels_form.start_page.raw_data[0]
+                end_page = novels_form.end_page.raw_data[0]
+                executor.submit(spider.get_latest, (url, start_page, end_page))
+                flash(u'提交成功')
+                return redirect('/admin/novel')
+            else:
+                flash(u'校验错误')
+
+        return self.render('novel_task.html',
+                           novel_form=novel_form,
+                           novels_form=novels_form)
 
 
 class PictureTaskForm(FlaskForm):
