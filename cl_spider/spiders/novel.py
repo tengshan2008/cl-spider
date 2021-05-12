@@ -1,6 +1,9 @@
+import urllib.parse
+from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Text, Tuple
 
+import bs4.element
 import dateutil.parser
 from bs4 import BeautifulSoup
 from cl_spider.app.models import Novel, db
@@ -9,8 +12,6 @@ from cl_spider.spiders.file_uploader import Uploader
 from cl_spider.spiders.manager import Manager
 from cl_spider.spiders.spider import Spider
 from loguru import logger
-import urllib.parse
-from datetime import datetime
 
 TID_KEY = 'tid'
 TITLE_KEY = 'title'
@@ -43,22 +44,86 @@ class IndexSpider(Spider):
         super().__init__(headers=headers)
         self.manager = manager if manager else IndexManager(limit=limit)
 
-    def load_data(self, url: Text):
-        pass
+    def load_data(self, url: Text) -> BeautifulSoup:
+        logger.info(f"route is '{self.format_url(url)}', have loaded")
+        return self.open(url)
 
-    def parse_data(self, url: Text, data: BeautifulSoup):
-        pass
+    def parse_link(self, url: Text, data: bs4.element.Tag) -> Text:
+        return f"{self.format_url_host(url)}/{data.find('a')['href'].strip()}"
 
-    def save_data(self, url: Text, parsed_data: Dict, metadata: Dict):
-        pass
+    def parse_tid(self, url: Text) -> Text:
+        return url.split('/')[-1][:-5]
 
-    def get_latest(self, metadata: Optional[Dict[Text, Any]] = None) -> None:
+    def parse_title(self, data: bs4.element.Tag) -> Text:
+        return list(data.find('a').stripped_strings)[0]
+
+    def parse_category(self, data: bs4.element.Tag) -> Text:
+        return list(
+            data.find(name='td', attrs={
+                'class': 'tal'
+            }).stripped_strings)[0][1:-1]
+
+    def parse_public_datetime(self, data: bs4.element.Tag) -> Text:
+        base = data.find(name='div', attrs={'class': 'f12'})
+        _date = base.string.strip()
+        _time = base.span['title'].strip()
+        if '今天' in _date or '昨天' in _date:
+            _date, _time = _time, _date
+            _date = _date.split(' ')[-1]
+            _time = _date.split(' ')[-1]
+        return dateutil.parser.parse(f'{_date} {_time}')
+
+    def parse_author(self, data: bs4.element.Tag) -> Text:
+        return data.find(name='a', attrs={'class': 'bl'}).string.strip()
+
+    def parse_data(self, url: Text, data: BeautifulSoup) -> Dict[Text, Any]:
+        body = data.find(name='tbody', attrs={'id': 'tbody'})
+        records = body.find_all(name='tr', attrs={'class': 'tr3 t_one tac'})
+
+        parsed_data = {}
+        for record in records:
+            link = self.parse_link(url, record)
+            parsed_data[link] = {
+                TID_KEY: self.parse_tid(link),
+                TITLE_KEY: self.parse_title(record),
+                CATEGORY_KEY: self.parse_category(record),
+                PUBLIC_DATETIME_KEY: self.parse_public_datetime(record),
+                AUTHOR_KEY: self.parse_author(record),
+            }
+
+        return parsed_data
+
+    def sub_spider(
+        self,
+        parsed_data: Dict,
+        metadata: Optional[Dict[Text, Any]] = None,
+    ):
+        for novel_url, novel_info in parsed_data.items():
+            novel_spider = NovelSpider(novel_info=novel_info)
+            novel_spider.get_latest(novel_url, metadata)
+
+    def get_pages(self, url: Text, start: int, end: int) -> List[Text]:
+        host = self.format_url_host(url)
+        link = f"{host}/thread0806.php?fid=20"
+
+        return [f'{link}&page={i}' for i in range(start, end + 1)]
+
+    def get_latest(
+        self,
+        url: Text,
+        start: int,
+        end: int,
+        metadata: Optional[Dict[Text, Any]] = None,
+    ) -> None:
+        pages = self.get_pages(url, start, end)
+        self.manager.add_new_urls(set(pages))
+
         while self.manager.has_new_url():
             self.random_sleep
             url = self.manager.get_new_url()
             data = self.load_data(url)
             parsed_data = self.parse_data(url, data)
-            self.save_data(url, parsed_data, metadata)
+            self.sub_spider(parsed_data, metadata)
 
 
 class NovelSpider(Spider):
@@ -70,9 +135,8 @@ class NovelSpider(Spider):
         limit: Optional[int] = None,
     ) -> None:
         super().__init__(headers=headers)
-        self.parsed_data = novel_info.copy() if novel_info else {
-            CONTENT_KEY: {}
-        }
+        self.parsed_data = novel_info.copy() if novel_info else {}
+        self.parsed_data[CONTENT_KEY] = {}
         self.manager = manager if manager else NovelManager(limit=limit)
 
     def load_data(self, url: Text) -> BeautifulSoup:
@@ -96,7 +160,7 @@ class NovelSpider(Spider):
         for cate in CATEGORIES:
             if cate in title:
                 return title.replace(cate, ''), cate[1:-1]
-        return title, '[UNKNOW]'
+        return title, 'UNKNOW'
 
     def parse_public_datetime(self, data: BeautifulSoup) -> Text:
         tipad = data.find('div', attrs={'class': 'tipad'})
@@ -240,9 +304,11 @@ class NovelSpider(Spider):
                            int(page_range[-1]) + 1)
         ]
 
-    def get_latest(self,
-                   url: Text,
-                   metadata: Optional[Dict[Text, Any]] = None) -> None:
+    def get_latest(
+        self,
+        url: Text,
+        metadata: Optional[Dict[Text, Any]] = None,
+    ) -> None:
         pages = self.get_pages(url)
         self.manager.add_new_urls(set(pages))
 
