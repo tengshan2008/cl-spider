@@ -6,7 +6,7 @@
 <form class="form" , method="post">
     {{ novel_form.hidden_tag() }}
     {{ render_field(novel_form.url) }}
-    {{ render_field(novel_form.submit) }}
+    {{ render_field(novel_form.novel_submit) }}
 </form>
 <h2>多本小说</h2>
 <form class="form" , method="post">
@@ -14,6 +14,6 @@
     {{ render_field(novels_form.url) }}
     {{ render_field(novels_form.start_page) }}
     {{ render_field(novels_form.end_page) }}
-    {{ render_field(novels_form.submit) }}
+    {{ render_field(novels_form.novels_submit) }}
 </form>
 {% endblock %}
