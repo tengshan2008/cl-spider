@@ -1,6 +1,4 @@
-from cl_spider.spiders.novel import IndexSpider
 from datetime import date
-import io
 from cl_spider.app import app, db, executor
 from cl_spider.app.models import Novel, Picture
 from flask import redirect
@@ -127,7 +125,7 @@ class NovelTaskForm(FlaskForm):
                    validators=[
                        DataRequired(message=u'网址不能为空'),
                    ])
-    submit = SubmitField(u'提交')
+    novel_submit = SubmitField(u'提交')
 
 
 class NovelsTaskForm(FlaskForm):
@@ -143,16 +141,16 @@ class NovelsTaskForm(FlaskForm):
                             validators=[
                                 DataRequired(message=u'不能为空'),
                             ])
-    submit = SubmitField(label=u'提交')
+    novels_submit = SubmitField(label=u'提交')
 
 
 class NovelTaskView(BaseView):
     @expose('/', methods=['GET', 'POST'])
     def index(self):
-        from cl_spider.spiders.novel import NovelSpider
+        from cl_spider.spiders.novel import NovelSpider, IndexSpider
 
         novel_form = NovelTaskForm()
-        if novel_form.validate_on_submit():
+        if novel_form.novel_submit.data and novel_form.validate_on_submit():
             if novel_form.url:
                 spider = NovelSpider()
                 url = novel_form.url.raw_data[0]
@@ -163,13 +161,13 @@ class NovelTaskView(BaseView):
                 flash(u'校验错误')
 
         novels_form = NovelsTaskForm()
-        if novels_form.validate_on_submit():
+        if novels_form.novels_submit.data and novels_form.validate_on_submit():
             if novels_form.start_page and novels_form.end_page:
                 spider = IndexSpider()
-                url = novels_form.url.raw_data[0]
-                start_page = novels_form.start_page.raw_data[0]
-                end_page = novels_form.end_page.raw_data[0]
-                executor.submit(spider.get_latest, (url, start_page, end_page))
+                # executor.submit(spider.get_latest, (url, start_page, end_page))
+                spider.get_latest(novels_form.url.data,
+                                  novels_form.start_page.data,
+                                  novels_form.end_page.data)
                 flash(u'提交成功')
                 return redirect('/admin/novel')
             else:
