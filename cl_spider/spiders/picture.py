@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import Any, Dict, Optional, Set, Text, Tuple
 
 from bs4 import BeautifulSoup
-from cl_spider.app import DBSession
+from cl_spider.app import db, thread_lock
 from cl_spider.app.models import Picture
 from cl_spider.config import PICTURE_BUCKET_NAME
 from cl_spider.spiders.file_uploader import IMG_EXTS, Uploader
@@ -149,9 +149,14 @@ class PictureSpider(Spider):
             link=link,
             share=share,
         )
-        session = DBSession()
-        session.add(picture)
-        session.commit()
+        try:
+            thread_lock.acquire()
+            db.session.add(picture)
+            db.session.commit()
+            thread_lock.release()
+        except Exception as err:
+            logger.error(f'picture execute database has error: {err}')
+            raise err
         # db.session.add(picture)
         # db.session.commit()
 
@@ -183,6 +188,7 @@ class PictureSpider(Spider):
                         self.exec_database(parsed_data, object_name, size, url,
                                            share)
 
+    # @logger.catch
     def get_latest(self, metadata: Optional[Dict[Text, Any]] = None) -> None:
         # 是否有待取的 URL
         while self.manager.has_new_url():

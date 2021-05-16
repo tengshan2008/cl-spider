@@ -1,11 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor
+import threading
 
 from flask import Flask
 from flask_babel import Babel
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from loguru import logger
-from sqlalchemy.orm.session import sessionmaker
 
 logger.add('logs/server.log', enqueue=True)
 
@@ -19,4 +19,4 @@ db = SQLAlchemy(app)
 babel = Babel(app)
 bootstrap = Bootstrap(app)
 
-DBSession = sessionmaker(bind=db.engine)
+thread_lock = threading.Lock()
