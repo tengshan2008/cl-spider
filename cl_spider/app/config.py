@@ -10,6 +10,5 @@ SECRET_KEY = 'very very hard to guess token'
 # babel
 BABEL_DEFAULT_LOCALE = 'zh_CN'
 
-# celery
-CELERY_BROKER_URL = 'redis://localhost:6379'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+# theme
+BOOTSTRAP_BOOTSWATCH_THEME = 'lumen'
