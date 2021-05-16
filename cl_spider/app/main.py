@@ -10,7 +10,7 @@ from flask_admin.model import typefmt
 from flask_wtf import FlaskForm
 from markupsafe import Markup
 from wtforms.fields.html5 import IntegerField, URLField
-from wtforms.fields.simple import SubmitField
+from wtforms.fields.simple import SubmitField, TextAreaField
 from wtforms.validators import DataRequired
 
 
@@ -153,8 +153,7 @@ class NovelTaskView(BaseView):
         if novel_form.novel_submit.data and novel_form.validate_on_submit():
             if novel_form.url:
                 spider = NovelSpider()
-                url = novel_form.url.raw_data[0]
-                executor.submit(spider.get_latest, (url))
+                executor.submit(spider.get_latest, (novel_form.url.data))
                 flash(u'提交成功')
                 return redirect('/admin/novel')
             else:
@@ -164,10 +163,12 @@ class NovelTaskView(BaseView):
         if novels_form.novels_submit.data and novels_form.validate_on_submit():
             if novels_form.start_page and novels_form.end_page:
                 spider = IndexSpider()
-                # executor.submit(spider.get_latest, (url, start_page, end_page))
-                spider.get_latest(novels_form.url.data,
-                                  novels_form.start_page.data,
-                                  novels_form.end_page.data)
+                args = [
+                    novels_form.url.data,
+                    novels_form.start_page.data,
+                    novels_form.end_page.data,
+                ]
+                executor.submit(lambda p: spider.get_latest(*p), args)
                 flash(u'提交成功')
                 return redirect('/admin/novel')
             else:
@@ -179,10 +180,15 @@ class NovelTaskView(BaseView):
 
 
 class PictureTaskForm(FlaskForm):
-    url = URLField(label=u'网址：',
-                   validators=[
-                       DataRequired(message=u'网址不能为空'),
-                   ])
+    valida = [
+        DataRequired(message=u'网址不能为空'),
+    ]
+    render_kw = {
+        'class': 'form-control text-body',
+        'rows': 10,
+        'placeholder': '请输入网址，一行一条。',
+    }
+    url = TextAreaField(label=u'网址：', validators=valida, render_kw=render_kw)
     submit = SubmitField(u'提交')
 
 
@@ -194,7 +200,11 @@ class PictureTaskView(BaseView):
         form = PictureTaskForm()
         if form.validate_on_submit():
             if form.url:
-                spider = PictureSpider.load(set(form.url.raw_data))
+                urls = [
+                    url.strip() for url in form.url.data.split('\n')
+                    if url.strip()
+                ]
+                spider = PictureSpider.load(set(urls))
                 executor.submit(spider.get_latest)
                 flash(u'提交成功')
                 return redirect('/admin/picture')
@@ -205,7 +215,7 @@ class PictureTaskView(BaseView):
 
 
 # create admin with custom base template
-index_view = AdminIndexView(name=u'导航栏', template='index.html', url='/admin')
+index_view = AdminIndexView(name=u'导航管理', template='index.html', url='/admin')
 admin = Admin(
     app,
     'CL-Spider',

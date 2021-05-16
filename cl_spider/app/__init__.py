@@ -4,6 +4,10 @@ from flask import Flask
 from flask_babel import Babel
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
+from loguru import logger
+from sqlalchemy.orm.session import sessionmaker
+
+logger.add('logs/server.log', enqueue=True)
 
 executor = ThreadPoolExecutor(max_workers=4)
 # create application
@@ -14,3 +18,5 @@ app.config.from_pyfile('config.py')
 db = SQLAlchemy(app)
 babel = Babel(app)
 bootstrap = Bootstrap(app)
+
+DBSession = sessionmaker(bind=db.engine)

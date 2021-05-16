@@ -1,19 +1,27 @@
 {% extends 'admin/master.html' %}
 {% block body %}
 {% from 'bootstrap/form.html' import render_field %}
-<h1>小说任务</h1>
-<h2>单本小说</h2>
-<form class="form" , method="post">
-    {{ novel_form.hidden_tag() }}
-    {{ render_field(novel_form.url) }}
-    {{ render_field(novel_form.novel_submit) }}
-</form>
-<h2>多本小说</h2>
-<form class="form" , method="post">
-    {{ novels_form.hidden_tag() }}
-    {{ render_field(novels_form.url) }}
-    {{ render_field(novels_form.start_page) }}
-    {{ render_field(novels_form.end_page) }}
-    {{ render_field(novels_form.novels_submit) }}
-</form>
+<div class="container">
+    <h1>小说任务</h1>
+    <div class="row">
+        <div class="col-md-6">
+            <h2>单本小说</h2>
+            <form class="form" , method="post">
+                {{ novel_form.hidden_tag() }}
+                {{ render_field(novel_form.url) }}
+                {{ render_field(novel_form.novel_submit) }}
+            </form>
+        </div>
+        <div class="col-md-6">
+            <h2>多本小说</h2>
+            <form class="form" , method="post">
+                {{ novels_form.hidden_tag() }}
+                {{ render_field(novels_form.url) }}
+                {{ render_field(novels_form.start_page) }}
+                {{ render_field(novels_form.end_page) }}
+                {{ render_field(novels_form.novels_submit) }}
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
