@@ -7,7 +7,7 @@ from cl_spider.config import MINIO_ACCESS_KEY, MINIO_ENDPOINT, MINIO_SECRET_KEY
 from loguru import logger
 from minio import Minio
 
-IMG_EXTS = ['png', 'jpg', 'jpeg', 'gif']
+IMG_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp']
 TXT_EXT = 'txt'
 
 
@@ -33,10 +33,6 @@ class Uploader:
                     location: Optional[Text] = "cn-north-1") -> None:
         try:
             self.minioClient.make_bucket(bucket_name, location)
-        # except BucketAlreadyOwnedByYou as err:
-        #     logger.warning(f"bucket already owned by you. {err}")
-        # except BucketAlreadyExists as err:
-        #     logger.warning(f"bucket already exists. {err}")
         except Exception as err:
             logger.error(f"response error: {err}")
             raise

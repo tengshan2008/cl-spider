@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import Any, Dict, Optional, Set, Text, Tuple
 
 from bs4 import BeautifulSoup
-from cl_spider.app import db
+from cl_spider.app import DBSession
 from cl_spider.app.models import Picture
 from cl_spider.config import PICTURE_BUCKET_NAME
 from cl_spider.spiders.file_uploader import IMG_EXTS, Uploader
@@ -30,6 +30,7 @@ class PictureSpider(Spider):
         self.manager = manager if manager else PictureManager(limit=limit)
 
     def load_data(self, url: Text) -> BeautifulSoup:
+        self.random_sleep
         logger.info(f"route is '{self.format_url(url)}', have loaded.")
         return self.open(url)
 
@@ -148,8 +149,11 @@ class PictureSpider(Spider):
             link=link,
             share=share,
         )
-        db.session.add(picture)
-        db.session.commit()
+        session = DBSession()
+        session.add(picture)
+        session.commit()
+        # db.session.add(picture)
+        # db.session.commit()
 
     def save_data(
         self,
@@ -182,15 +186,18 @@ class PictureSpider(Spider):
     def get_latest(self, metadata: Optional[Dict[Text, Any]] = None) -> None:
         # 是否有待取的 URL
         while self.manager.has_new_url():
-            self.random_sleep
             # 获取一个新 URL
             url = self.manager.get_new_url()
-            # 获取网页信息
-            data = self.load_data(url)
-            # 解析网页信息
-            parsed_data = self.parse_data(url, data)
-            # 保留有效信息
-            self.save_data(url, parsed_data, metadata)
+            try:
+                # 获取网页信息
+                data = self.load_data(url)
+                # 解析网页信息
+                parsed_data = self.parse_data(url, data)
+                # 保留有效信息
+                self.save_data(url, parsed_data, metadata)
+            except Exception as err:
+                logger.error(f'picture spider has error: {err}')
+                continue
 
     @classmethod
     def load(cls, urlset: Set[Text]) -> "PictureSpider":

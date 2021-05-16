@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Optional, Text, Tuple
 import bs4.element
 import dateutil.parser
 from bs4 import BeautifulSoup
-from cl_spider.app.models import Novel, db
+from cl_spider.app import DBSession
+from cl_spider.app.models import Novel
 from cl_spider.config import NOVEL_BUCKET_NAME
 from cl_spider.spiders.file_uploader import Uploader
 from cl_spider.spiders.manager import Manager
@@ -45,6 +46,7 @@ class IndexSpider(Spider):
         self.manager = manager if manager else IndexManager(limit=limit)
 
     def load_data(self, url: Text) -> BeautifulSoup:
+        self.random_sleep
         logger.info(f"route is '{self.format_url(url)}', have loaded")
         return self.open(url)
 
@@ -115,15 +117,22 @@ class IndexSpider(Spider):
         end: int,
         metadata: Optional[Dict[Text, Any]] = None,
     ) -> None:
-        pages = self.get_pages(url, start, end)
+        try:
+            pages = self.get_pages(url, start, end)
+        except Exception as err:
+            logger.error(f'index spider - get_pages has error: {err}')
+            return None
         self.manager.add_new_urls(set(pages))
 
         while self.manager.has_new_url():
-            self.random_sleep
             url = self.manager.get_new_url()
-            data = self.load_data(url)
-            parsed_data = self.parse_data(url, data)
-            self.sub_spider(parsed_data, metadata)
+            try:
+                data = self.load_data(url)
+                parsed_data = self.parse_data(url, data)
+                self.sub_spider(parsed_data, metadata)
+            except Exception as err:
+                logger.error(f'index spider has error: {err}')
+                continue
 
 
 class NovelSpider(Spider):
@@ -140,6 +149,7 @@ class NovelSpider(Spider):
         self.manager = manager if manager else NovelManager(limit=limit)
 
     def load_data(self, url: Text) -> BeautifulSoup:
+        self.random_sleep
         logger.info(f'route is "{self.format_url(url)}", have loaded.')
         return self.open(url)
 
@@ -245,8 +255,11 @@ class NovelSpider(Spider):
             size=str(size),
             share=share,
         )
-        db.session.add(novel)
-        db.session.commit()
+        session = DBSession()
+        session.add(novel)
+        session.commit()
+        # db.session.add(novel)
+        # db.session.commit()
 
     def merge_content(self, pages: List[Text]) -> Text:
         content = []
@@ -309,12 +322,23 @@ class NovelSpider(Spider):
         url: Text,
         metadata: Optional[Dict[Text, Any]] = None,
     ) -> None:
-        pages = self.get_pages(url)
+        try:
+            pages = self.get_pages(url)
+        except Exception as err:
+            logger.error(f'novel spider - get_pages has error: {err}')
+            return None
         self.manager.add_new_urls(set(pages))
 
         while self.manager.has_new_url():
-            self.random_sleep
             url = self.manager.get_new_url()
-            data = self.load_data(url)
-            self.parse_data(url, data)
-        self.save_data(pages, metadata)
+            try:
+                data = self.load_data(url)
+                self.parse_data(url, data)
+            except Exception as err:
+                logger.error(f'novel spider has error: {err}')
+                continue
+        try:
+            self.save_data(pages, metadata)
+        except Exception as err:
+            logger.error(f'novel spider - save_data has error: {err}')
+            return None
