@@ -11,7 +11,8 @@ ENV PATH="$VIRTURL_ENV/bin:$PATH"
 
 RUN pip install --upgrade pip && pip install pip-tools
 COPY ./requirements.in .
-RUN pip-compile requirements.in > requirements.txt && pip-sync
+RUN pip-compile requirements.in > requirements.txt
+RUN pip-sync
 RUN pip install -r requirements.txt
 
 FROM python:3.7.10-slim-buster AS runtime-image
