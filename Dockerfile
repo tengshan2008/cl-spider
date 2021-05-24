@@ -1,4 +1,4 @@
-FROM python:3.7.10-slim-buster AS compile-image
+FROM arm32v7/python:3.7.10-slim-buster AS compile-image
 
 # ADD sources.list /etc/apt/
 
@@ -19,7 +19,7 @@ RUN pip install --upgrade pip
 COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 
-FROM python:3.7.10-slim-buster AS runtime-image
+FROM arm32v7/python:3.7.10-slim-buster AS runtime-image
 
 MAINTAINER tengshan2008
 
