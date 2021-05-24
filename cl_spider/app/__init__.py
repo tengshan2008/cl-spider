@@ -1,5 +1,4 @@
 from concurrent.futures import ThreadPoolExecutor
-import threading
 
 from flask import Flask
 from flask_babel import Babel
@@ -10,13 +9,16 @@ from loguru import logger
 logger.add('logs/server.log', enqueue=True)
 
 executor = ThreadPoolExecutor(max_workers=4)
+
 # create application
-app = Flask(__name__, template_folder='templates')
+def create_app():
+    app = Flask(__name__, template_folder='templates')
+    app.config.from_pyfile('config.py')
 
-app.config.from_pyfile('config.py')
+    return app
 
+app = create_app()
 db = SQLAlchemy(app)
 babel = Babel(app)
 bootstrap = Bootstrap(app)
 
-thread_lock = threading.Lock()

@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import Any, Dict, Optional, Set, Text, Tuple
 
 from bs4 import BeautifulSoup
-from cl_spider.app import db, thread_lock
+from cl_spider.app import db
 from cl_spider.app.models import Picture
 from cl_spider.config import PICTURE_BUCKET_NAME
 from cl_spider.spiders.file_uploader import IMG_EXTS, Uploader
@@ -150,13 +150,14 @@ class PictureSpider(Spider):
             share=share,
         )
         try:
-            thread_lock.acquire()
             db.session.add(picture)
             db.session.commit()
-            thread_lock.release()
         except Exception as err:
+            db.session.rollback()
             logger.error(f'picture execute database has error: {err}')
             raise err
+        finally:
+            db.session.close()
         # db.session.add(picture)
         # db.session.commit()
 

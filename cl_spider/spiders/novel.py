@@ -257,13 +257,14 @@ class NovelSpider(Spider):
             share=share,
         )
         try:
-            thread_lock.acquire()
             db.session.add(novel)
             db.session.commit()
-            thread_lock.release()
         except Exception as err:
+            db.session.rollback()
             logger.error(f'novel execute database has error: {err}')
             raise err
+        finally:
+            db.session.close()
         # db.session.add(novel)
         # db.session.commit()
 

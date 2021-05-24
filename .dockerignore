@@ -1,0 +1,12 @@
+.venv
+.vscode
+.idea
+.dockerignore
+.gitignore
+Dockerfile
+
+README.md
+
+logs
+tests
+docs
