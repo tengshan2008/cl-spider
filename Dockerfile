@@ -1,4 +1,4 @@
-FROM python:3.7.10-slim-buster AS compile-image
+FROM python:3.7.5-slim-buster AS compile-image
 
 # ADD sources.list /etc/apt/
 
@@ -15,7 +15,7 @@ RUN pip-compile requirements.in > requirements.txt
 RUN pip-sync
 RUN pip install -r requirements.txt
 
-FROM python:3.7.10-slim-buster AS runtime-image
+FROM python:3.7.5-slim-buster AS runtime-image
 
 MAINTAINER tengshan2008
 
