@@ -1,6 +1,7 @@
 FROM python:3.7.10-slim-buster AS compile-image
 
 ADD sources.list /etc/apt/
+ADD raspi.list /etc/apt/sources.list.d/
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc
