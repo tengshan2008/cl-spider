@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Text, Tuple
 import bs4.element
 import dateutil.parser
 from bs4 import BeautifulSoup
-from cl_spider.app import db, thread_lock
+from cl_spider.app import db
 from cl_spider.app.models import Novel
 from cl_spider.config import NOVEL_BUCKET_NAME
 from cl_spider.spiders.file_uploader import Uploader

@@ -2,8 +2,13 @@ FROM arm32v7/python:3.7.10-slim-buster AS compile-image
 
 # ADD sources.list /etc/apt/
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc
+RUN apk add --no-cache --update python3-dev gcc build-base && \
+    apk add --no-cache libffi-dev && \
+    apk add --no-cache openssl-dev && \
+    apk add --no-cache gcc musl-dev libxslt-dev
+
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends gcc
 
 ENV VIRTURL_ENV=/opt/venv
 RUN python3 -m venv $VIRTURL_ENV
