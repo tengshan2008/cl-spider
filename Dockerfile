@@ -9,8 +9,7 @@ FROM arm32v7/python:3.7.10-slim-buster AS compile-image
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends python3-dev \
-    libxml2-dev libxslt1-dev zlib1g-dev libevent-dev && \
-    apt-get groupinstall 'development tools'
+    libxml2-dev libxslt1-dev zlib1g-dev libevent-dev
 #     apt-get install -y --no-install-recommends gcc python3-dev
 
 ENV VIRTURL_ENV=/opt/venv
