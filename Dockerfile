@@ -1,4 +1,4 @@
-FROM arm32v7/python:3.7.10-slim-buster AS compile-image
+FROM arm32v7/python:3.7.10-buster AS compile-image
 
 # ADD sources.list /etc/apt/
 
@@ -7,9 +7,9 @@ FROM arm32v7/python:3.7.10-slim-buster AS compile-image
 #     apk add --no-cache openssl-dev && \
 #     apk add --no-cache gcc musl-dev libxslt-dev
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3-dev \
-    libxml2-dev libxslt1-dev zlib1g-dev libevent-dev
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends python3-dev \
+#     libxml2-dev libxslt1-dev zlib1g-dev libevent-dev
 #     apt-get install -y --no-install-recommends gcc python3-dev
 
 ENV VIRTURL_ENV=/opt/venv
@@ -26,7 +26,7 @@ RUN pip install --upgrade pip
 COPY ./requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-FROM arm32v7/python:3.7.10-slim-buster AS runtime-image
+FROM arm32v7/python:3.7.10-buster AS runtime-image
 
 MAINTAINER tengshan2008
 
