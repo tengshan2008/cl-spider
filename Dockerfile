@@ -8,7 +8,7 @@ FROM arm32v7/python:3.7.10-slim-buster AS compile-image
 #     apk add --no-cache gcc musl-dev libxslt-dev
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc build-base
+    apt-get install -y --no-install-recommends gcc python3-dev
 
 ENV VIRTURL_ENV=/opt/venv
 RUN python3 -m venv $VIRTURL_ENV
@@ -22,7 +22,7 @@ ENV PATH="$VIRTURL_ENV/bin:$PATH"
 
 RUN pip install --upgrade pip
 COPY ./requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 FROM arm32v7/python:3.7.10-slim-buster AS runtime-image
 
