@@ -3,7 +3,7 @@ FROM arm32v7/python:3.7.10-slim-buster AS compile-image
 ADD sources.list /etc/apt/
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc python3-dev \
+    apt-get install -y --no-install-recommends gcc g++ \
     libxml2-dev libxslt1-dev zlib1g-dev
 
 ENV VIRTURL_ENV=/opt/venv
