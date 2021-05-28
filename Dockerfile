@@ -1,11 +1,11 @@
-FROM arm32v7/python:3.7.10-alpine AS compile-image
+FROM arm32v7/python:3.8-slim-buster AS compile-image
 
 # ADD sources.list /etc/apt/
 
-RUN apk add --no-cache --update python3-dev gcc build-base && \
-    apk add --no-cache libffi-dev && \
-    apk add --no-cache openssl-dev && \
-    apk add --no-cache gcc musl-dev libxslt-dev
+# RUN apk add --no-cache --update python3-dev gcc build-base && \
+#     apk add --no-cache libffi-dev && \
+#     apk add --no-cache openssl-dev && \
+#     apk add --no-cache gcc musl-dev libxslt-dev
 
 # RUN apt-get update && \
 #     apt-get install -y --no-install-recommends gcc python3-dev
