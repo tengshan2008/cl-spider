@@ -1,4 +1,4 @@
-FROM arm32v7/python:3.8-slim-buster AS compile-image
+FROM arm32v7/python:3.7.10-slim-buster AS compile-image
 
 # ADD sources.list /etc/apt/
 
@@ -8,7 +8,7 @@ FROM arm32v7/python:3.8-slim-buster AS compile-image
 #     apk add --no-cache gcc musl-dev libxslt-dev
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python-dev python3-dev \
+    apt-get install -y --no-install-recommends python3-dev \
     libxml2-dev libxslt1-dev zlib1g-dev libevent-dev && \
     apt-get groupinstall 'development tools'
 #     apt-get install -y --no-install-recommends gcc python3-dev
