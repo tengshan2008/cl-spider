@@ -1,4 +1,4 @@
-FROM arm32v7/python:3.7.10-alpine-buster AS compile-image
+FROM arm32v7/python:3.7.10-alpine AS compile-image
 
 # ADD sources.list /etc/apt/
 
