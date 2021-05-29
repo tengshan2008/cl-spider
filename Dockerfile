@@ -14,6 +14,7 @@ RUN pip install --upgrade pip
 COPY ./requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ \
     --trusted-host mirrors.aliyun.com
+RUN pip install --no-cache-dir gevent==21.1.2
 
 FROM arm32v7/python:3.7.10-slim-buster AS runtime-image
 
