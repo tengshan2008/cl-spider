@@ -44,8 +44,8 @@ def date_format(view, value):
 
 def title_format(view, content, model, name):
     title = getattr(model, name)
-    if len(title) > 25:
-        short = f'{title[:10]} ... {title[-15:]}'
+    if len(title) > 20:
+        short = f'{title[:20]} ...'
         return Markup(f'<p title="{title}">{short}</p>')
     return Markup(f'<p>{title}</p>')
 
