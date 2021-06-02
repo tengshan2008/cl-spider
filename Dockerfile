@@ -39,4 +39,4 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PATH="/opt/venv/bin:$PATH"
 
-CMD ["gunicorn", "wsgi:application", "-c", "gunicorn.conf.py"]
+CMD ["./startup.sh"]
