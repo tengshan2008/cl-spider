@@ -6,7 +6,7 @@ requests==2.25.1
 mechanicalsoup==1.0.0
 fake-useragent==0.1.11
 minio==7.0.3
-Flask-BabelEx==0.9.4
+Flask-Babel==2.0.0
 bootstrap-flask==1.5.2
 Flask-WTF==0.14.3
 python-dateutil==2.8.1
