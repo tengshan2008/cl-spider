@@ -25,8 +25,5 @@ babel = Babel(app)
 bootstrap = Bootstrap(app)
 
 
-def init_db():
-    db.create_all()
 
 
-init_db()

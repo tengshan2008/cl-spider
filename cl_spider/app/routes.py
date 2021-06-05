@@ -229,4 +229,5 @@ admin.add_view(NovelTaskView(name=u'小说', category=u'新建'))
 admin.add_view(PictureTaskView(name=u'图片', category=u'新建'))
 
 
-
+def init_db():
+    db.create_all()
