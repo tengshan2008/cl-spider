@@ -1,8 +1,22 @@
 # create in-memory database
-DATABASE_FILE = 'db.sqlite'
-SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
+# DATABASE_FILE = 'db.sqlite'
+# SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
 SQLALCHEMY_ECHO = True
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+# create mysql database
+DIALECT = 'mysql'
+DRIVER = 'pymysql'
+USERNAME = 'root'
+PASSWORD = '123456'
+HOST = 'mysql'
+PORT = '3306'
+DATABASE = 'cl'
+
+SQLALCHEMY_DATABASE_URI = (
+    f'{DIALECT}+{DRIVER}://{USERNAME}:{PASSWORD}',
+    F'@{HOST}:{PORT}/{DATABASE}?charset=utf8mb4',
+)
 
 # secret key
 SECRET_KEY = 'very very hard to guess token'
