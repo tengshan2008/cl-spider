@@ -34,7 +34,6 @@ RUN chown -R user:user /usr/src/app && chmod -R 755 /usr/src/app
 USER user
 
 COPY . /usr/src/app
-RUN chmod +x /usr/src/app/startup.sh
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
