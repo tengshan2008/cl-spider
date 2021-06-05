@@ -1,3 +1,3 @@
 #!/bin/bash
 source /opt/venv/bin/activate
-gunicorn wsgi:application -c gunicorn.conf.py
+gunicorn --access-logfile - --error-logfile - wsgi:application -c gunicorn.conf.py
