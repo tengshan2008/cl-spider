@@ -39,7 +39,9 @@ class Spider:
         response: Optional[Response] = None,
         **kwargs,
     ) -> Tuple[BeautifulSoup, Response]:
-        with Browser(user_agent=self.headers['User-Agent'], **kwargs) as b:
+        with Browser(soup_config={'features': 'html5lib'},
+                     user_agent=self.headers['User-Agent'],
+                     **kwargs) as b:
             try:
                 response = b.open(url, timeout=TIMEOUT)
             except REQUESTS_EXCEPTION as e:
