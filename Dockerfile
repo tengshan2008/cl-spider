@@ -4,7 +4,7 @@ ADD sources.list /etc/apt/
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc g++ \
-    libxml2 libxml2-dev libxslt-dev zlib1g-dev libffi-dev
+    libxml2 libxml2-dev python3-libxml2 libxslt1-dev python-libxslt1 zlib1g-dev libffi-dev
 
 ENV VIRTURL_ENV=/opt/venv
 RUN python3 -m venv $VIRTURL_ENV
