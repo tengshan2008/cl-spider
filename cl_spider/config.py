@@ -1,7 +1,8 @@
 # minio server
-MINIO_ENDPOINT = "raspberrypi4.local:9090"
+MINIO_ENDPOINT = "minio:9090"
+# MINIO_ENDPOINT = "192.168.1.5:9090"
 MINIO_ACCESS_KEY = "admin"
 MINIO_SECRET_KEY = "8rO8qpl3VASXagqX"
 
-PICTURE_BUCKET_NAME = "test-picture"
-NOVEL_BUCKET_NAME = "test-novel"
+PICTURE_BUCKET_NAME = "picture"
+NOVEL_BUCKET_NAME = "novel"

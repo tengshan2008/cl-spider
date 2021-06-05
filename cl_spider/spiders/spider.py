@@ -25,7 +25,7 @@ MAX_RETRIES = 3
 
 class Spider:
     def __init__(self, headers: Dict[Text, Text] = None) -> None:
-        ua = FakeUserAgent()
+        ua = FakeUserAgent(use_cache_server=False)
         # ua.update()
         if headers is None:
             self.headers = {'User-Agent': ua.random}
