@@ -1,3 +1,4 @@
+import os
 import random
 import time
 import urllib.parse
@@ -25,10 +26,8 @@ MAX_RETRIES = 3
 
 class Spider:
     def __init__(self, headers: Dict[Text, Text] = None) -> None:
-        ua = FakeUserAgent(use_cache_server=False)
-        # ua.update()
         if headers is None:
-            self.headers = {'User-Agent': ua.random}
+            self.headers = {'User-Agent': self.user_agent}
         else:
             self.headers = headers
 
@@ -126,3 +125,9 @@ class Spider:
         max: Optional[int] = WAIT_TIME_MAX,
     ) -> None:
         time.sleep(random.randint(min, max))
+
+    @property
+    def user_agent(self):
+        location = os.getcwd() + '/cl_spider/spiders/fake_useragent.json'
+        ua = FakeUserAgent(path=location)
+        return ua.random
