@@ -14,7 +14,6 @@ from cl_spider.spiders.manager import Manager
 from cl_spider.spiders.spider import Spider
 from loguru import logger
 
-
 TID_KEY = 'tid'
 TITLE_KEY = 'title'
 CATEGORY_KEY = 'category'
@@ -61,10 +60,11 @@ class IndexSpider(Spider):
         return list(data.find('a').stripped_strings)[0]
 
     def parse_category(self, data: bs4.element.Tag) -> Text:
-        return list(
+        category = list(
             data.find(name='td', attrs={
                 'class': 'tal'
-            }).stripped_strings)[0][1:-1]
+            }).stripped_strings)[0]
+        return category[1:-1] if category in CATEGORIES else 'UNKNOW'
 
     def parse_public_datetime(self, data: bs4.element.Tag) -> Text:
         base = data.find(name='div', attrs={'class': 'f12'})

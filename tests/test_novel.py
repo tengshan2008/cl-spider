@@ -1,7 +1,7 @@
 import unittest
 from cl_spider.spiders.novel import NovelSpider
 
-TEST_SINGLE_PAGE = 'https://cl.192x.xyz/htm_data/2105/20/4476662.html'
+TEST_SINGLE_PAGE = 'https://cl.192x.xyz/htm_data/2105/20/4487838.html'
 TEST_MULTIPLE_PAGE = 'https://cl.192x.xyz/htm_data/2104/20/4456719.html'
 
 
@@ -25,8 +25,8 @@ class NovelSpiderTest(unittest.TestCase):
         url = TEST_SINGLE_PAGE
         ns = NovelSpider()
         data = ns.load_data(url)
-        parsed_data = ns.parse_data(url, data)
-        print(parsed_data)
+        ns.parse_data(url, data)
+        print(ns.parsed_data)
 
     def test_multiple_page_parse_data(self):
         url = TEST_MULTIPLE_PAGE
