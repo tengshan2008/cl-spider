@@ -237,7 +237,7 @@ class NovelSpider(Spider):
         share = uploader.get_object_share(bucket_name, object_name)
         return share
 
-    def exec_database(self, link: Text, share: Text, size: int) -> None:
+    def exec_database(self, link: Text, size: int) -> None:
         _query = Novel.query.filter_by(origin_id=self.parsed_data[TID_KEY])
         if _query.first():
             _query.update({
@@ -254,7 +254,6 @@ class NovelSpider(Spider):
             category=self.parsed_data[CATEGORY_KEY],
             link=link,
             size=str(size),
-            share=share,
         )
         try:
             db.session.add(novel)
@@ -302,7 +301,7 @@ class NovelSpider(Spider):
             share = self.exec_minio(uploader, bucket_name, object_name,
                                     content.encode(encoding="utf-8"))
             if share:
-                self.exec_database(pages[0], share, len(content))
+                self.exec_database(pages[0], len(content))
 
     def get_pages(self, url: Text) -> List[Text]:
         only_author_url = (f'{self.format_url_host(url)}/read.php'
