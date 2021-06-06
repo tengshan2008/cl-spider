@@ -23,7 +23,3 @@ app = create_app()
 db = SQLAlchemy(app)
 babel = Babel(app)
 bootstrap = Bootstrap(app)
-
-
-
-

@@ -33,7 +33,6 @@ class Picture(db.Model):
     author = db.Column(db.String(255), nullable=True)
     public_datetime = db.Column(db.DateTime, nullable=True)
     link = db.Column(db.String(255), nullable=True)
-    share = db.Column(db.String(4096), nullable=True)
     status = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now)

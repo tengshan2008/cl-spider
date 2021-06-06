@@ -1,6 +1,10 @@
 from datetime import date
+
 from cl_spider.app import app, db, executor
 from cl_spider.app.models import Novel, Picture
+from cl_spider.config import (MINIO_ENDPOINT, MINIO_SERVER_ENDPOINT,
+                              PICTURE_BUCKET_NAME)
+from cl_spider.spiders.file_uploader import Uploader
 from flask import redirect
 from flask.helpers import flash, send_file
 from flask_admin import Admin, BaseView, expose
@@ -34,8 +38,11 @@ def link_formatter(view, context, model, name):
 
 
 def share_formatter(view, context, model, name):
-    field = getattr(model, name)
-    return Markup(f'<a href="{field}" target="_blank">SHARE</a>')
+    uploader = Uploader()
+    title = getattr(model, 'title')
+    share = uploader.get_object_share(PICTURE_BUCKET_NAME, title)
+    share = share.replace(MINIO_ENDPOINT, MINIO_SERVER_ENDPOINT)
+    return Markup(f'<a href="{share}" target="_blank">SHARE</a>')
 
 
 def date_format(view, value):
@@ -147,7 +154,7 @@ class NovelsTaskForm(FlaskForm):
 class NovelTaskView(BaseView):
     @expose('/', methods=['GET', 'POST'])
     def index(self):
-        from cl_spider.spiders.novel import NovelSpider, IndexSpider
+        from cl_spider.spiders.novel import IndexSpider, NovelSpider
 
         novel_form = NovelTaskForm()
         if novel_form.novel_submit.data and novel_form.validate_on_submit():
