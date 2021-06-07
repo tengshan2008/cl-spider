@@ -1,7 +1,7 @@
 # create in-memory database
 # DATABASE_FILE = 'db.sqlite'
 # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
-SQLALCHEMY_ECHO = True
+SQLALCHEMY_ECHO = False
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # create mysql database
@@ -10,6 +10,7 @@ DRIVER = 'pymysql'
 USERNAME = 'root'
 PASSWORD = '123456'
 HOST = 'mysql'
+# HOST = '192.168.1.5'
 PORT = '3306'
 DATABASE = 'cl'
 
