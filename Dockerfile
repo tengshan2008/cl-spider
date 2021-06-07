@@ -24,6 +24,9 @@ EXPOSE 8000
 RUN apt-get update && \
     apt-get install -y --no-install-recommends netcat-openbsd
 
+RUN /bin/cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo 'Asia/Shanghai' > /etc/timezone
+
 COPY --from=compile-image /opt/venv /opt/venv
 
 WORKDIR /usr/src/app
