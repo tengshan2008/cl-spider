@@ -56,14 +56,14 @@ class Spider:
 
         if response is None:
             logger.warning(f"route is {self.format_url(url)}, request failed.")
-            return (None, None)
+            return None, None
         if response is None and soup is None:
             logger.warning(
                 f"route is {self.format_url(url)}, parse soup failed.")
-            return (None, None)
+            return None, None
         if soup and '無法找到頁面' in soup.head.title.string:
             logger.warning(f"route is {self.format_url(url)}, page 404.")
-            return (None, None)
+            return None, None
 
         return soup, response
 
