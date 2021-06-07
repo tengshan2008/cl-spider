@@ -70,7 +70,10 @@ class IndexSpider(Spider):
         base = data.find(name='div', attrs={'class': 'f12'})
         _date = base.string.strip()
         _time = base.span['title'].strip()
-        if '今天' in _date or '昨天' in _date:
+        if 'Top-marks' in _date:
+            _time = _time.replace('置顶主题：', '')
+            _date, _time = _time.split(' ')
+        elif '今天' in _date or '昨天' in _date:
             _date, _time = _time, _date
             _date = _date.split(' ')[-1]
             _time = _date.split(' ')[-1]
