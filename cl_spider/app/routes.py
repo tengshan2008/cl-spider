@@ -1,6 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
-
-import urllib3
 
 from cl_spider.app import app, db, executor
 from cl_spider.app.models import Novel, Picture
@@ -167,6 +166,7 @@ class NovelTaskView(BaseView):
         if novel_form.novel_submit.data and novel_form.validate_on_submit():
             if novel_form.url:
                 spider = NovelSpider()
+                executor = ThreadPoolExecutor(max_workers=1)
                 executor.submit(spider.get_latest, (novel_form.url.data))
                 flash(u'提交成功')
                 return redirect('/admin/novel')
@@ -182,6 +182,7 @@ class NovelTaskView(BaseView):
                     novels_form.start_page.data,
                     novels_form.end_page.data,
                 ]
+                executor = ThreadPoolExecutor(max_workers=1)
                 executor.submit(lambda p: spider.get_latest(*p), args)
                 flash(u'提交成功')
                 return redirect('/admin/novel')

@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor
+# from concurrent.futures import ThreadPoolExecutor
 
 from flask import Flask
 from flask_babel import Babel
@@ -8,7 +8,7 @@ from loguru import logger
 
 logger.add('logs/server.log', enqueue=True)
 
-executor = ThreadPoolExecutor(max_workers=4)
+# executor = ThreadPoolExecutor(max_workers=4)
 
 
 # create application
