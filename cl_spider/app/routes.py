@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
+import urllib3
 from cl_spider.app import app, db
 from cl_spider.app.models import Novel, Picture
 from cl_spider.config import (MINIO_ACCESS_KEY, MINIO_SECRET_KEY,
@@ -39,13 +40,20 @@ def link_formatter(view, context, model, name):
 
 
 def share_formatter(view, context, model, name):
-    # httpClient = urllib3.ProxyManager(f'http://{MINIO_SERVER_ENDPOINT}')
+    httpClient = urllib3.ProxyManager(
+        f'http://{MINIO_SERVER_ENDPOINT}',
+        timeout=urllib3.Timeout.DEFAULT_TIMEOUT,
+        retries=urllib3.Retry(total=5,
+                              backoff_factor=0.2,
+                              status_forcelist=[500, 502, 503, 504]))
     uploader = Uploader(
-        metadata={
-            'endpoint': MINIO_SERVER_ENDPOINT,
-            'access_key': MINIO_ACCESS_KEY,
-            'secret_key': MINIO_SECRET_KEY,
-        })
+        http_client=httpClient,
+        # metadata={
+        #     'endpoint': MINIO_SERVER_ENDPOINT,
+        #     'access_key': MINIO_ACCESS_KEY,
+        #     'secret_key': MINIO_SECRET_KEY,
+        # },
+    )
     title = getattr(model, 'title')
     share = uploader.get_object_share(PICTURE_BUCKET_NAME, title)
     return Markup(f'<a href="{share}" target="_blank">SHARE</a>')

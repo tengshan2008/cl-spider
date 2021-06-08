@@ -1,5 +1,6 @@
 from io import BytesIO
 from typing import Any, Dict, Optional, Text
+from urllib3 import ProxyManager
 
 from cl_spider.config import MINIO_ACCESS_KEY, MINIO_ENDPOINT, MINIO_SECRET_KEY
 # from minio.error import (ResponseError, BucketAlreadyOwnedByYou,
@@ -12,13 +13,18 @@ TXT_EXT = 'txt'
 
 
 class Uploader:
-    def __init__(self, metadata: Optional[Dict[Text, Any]] = None) -> None:
+    def __init__(
+        self,
+        http_client: Optional[ProxyManager] = None,
+        metadata: Optional[Dict[Text, Any]] = None,
+    ) -> None:
         if metadata is None:
             self.minioClient = Minio(
                 MINIO_ENDPOINT,
                 access_key=MINIO_ACCESS_KEY,
                 secret_key=MINIO_SECRET_KEY,
                 secure=False,
+                http_client=http_client,
             )
         else:
             self.minioClient = Minio(
@@ -26,6 +32,7 @@ class Uploader:
                 access_key=metadata['access_key'],
                 secret_key=metadata['secret_key'],
                 secure=False,
+                http_client=http_client,
             )
 
     def make_bucket(self,
@@ -77,8 +84,7 @@ class Uploader:
             logger.error(f"response error: {err}")
             raise
         else:
-            logger.info(
-                f"created {result.object_name} object; etag: {result.etag}")
+            logger.info(f"created {result.object_name} object")
 
     def stat_object_size(self, bucket_name: Text, object_name: Text):
         try:
