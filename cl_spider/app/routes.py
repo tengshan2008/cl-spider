@@ -1,7 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
-from cl_spider.app import app, db, executor
+from cl_spider.app import app, db
 from cl_spider.app.models import Novel, Picture
 from cl_spider.config import (MINIO_ACCESS_KEY, MINIO_SECRET_KEY,
                               MINIO_SERVER_ENDPOINT, PICTURE_BUCKET_NAME)
