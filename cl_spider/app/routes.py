@@ -48,11 +48,11 @@ def share_formatter(view, context, model, name):
                               status_forcelist=[500, 502, 503, 504]))
     uploader = Uploader(
         http_client=httpClient,
-        # metadata={
-        #     'endpoint': MINIO_SERVER_ENDPOINT,
-        #     'access_key': MINIO_ACCESS_KEY,
-        #     'secret_key': MINIO_SECRET_KEY,
-        # },
+        metadata={
+            'endpoint': MINIO_SERVER_ENDPOINT,
+            'access_key': MINIO_ACCESS_KEY,
+            'secret_key': MINIO_SECRET_KEY,
+        },
     )
     title = getattr(model, 'title')
     share = uploader.get_object_share(PICTURE_BUCKET_NAME, title)
