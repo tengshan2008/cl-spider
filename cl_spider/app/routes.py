@@ -1,9 +1,11 @@
 from datetime import date
 
+import urllib3
+
 from cl_spider.app import app, db, executor
 from cl_spider.app.models import Novel, Picture
-from cl_spider.config import (MINIO_ENDPOINT, MINIO_SERVER_ENDPOINT,
-                              PICTURE_BUCKET_NAME)
+from cl_spider.config import (MINIO_ACCESS_KEY, MINIO_SECRET_KEY,
+                              MINIO_SERVER_ENDPOINT, PICTURE_BUCKET_NAME)
 from cl_spider.spiders.file_uploader import Uploader
 from flask import redirect
 from flask.helpers import flash, send_file
@@ -38,10 +40,15 @@ def link_formatter(view, context, model, name):
 
 
 def share_formatter(view, context, model, name):
-    uploader = Uploader()
+    # httpClient = urllib3.ProxyManager(f'http://{MINIO_SERVER_ENDPOINT}')
+    uploader = Uploader(
+        metadata={
+            'endpoint': MINIO_SERVER_ENDPOINT,
+            'access_key': MINIO_ACCESS_KEY,
+            'secret_key': MINIO_SECRET_KEY,
+        })
     title = getattr(model, 'title')
     share = uploader.get_object_share(PICTURE_BUCKET_NAME, title)
-    share = share.replace(MINIO_ENDPOINT, MINIO_SERVER_ENDPOINT)
     return Markup(f'<a href="{share}" target="_blank">SHARE</a>')
 
 
