@@ -221,6 +221,7 @@ class PictureTaskView(BaseView):
                     if url.strip()
                 ]
                 spider = PictureSpider.load(set(urls))
+                executor = ThreadPoolExecutor(max_workers=1)
                 executor.submit(spider.get_latest)
                 flash(u'提交成功')
                 return redirect('/admin/picture')
