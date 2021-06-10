@@ -3,6 +3,7 @@ from io import BytesIO
 from typing import Any, Dict, Optional, Set, Text, Tuple
 
 from bs4 import BeautifulSoup
+import dateutil.parser
 from cl_spider.app import db
 from cl_spider.app.models import Picture
 from cl_spider.config import PICTURE_BUCKET_NAME
@@ -33,6 +34,14 @@ class PictureSpider(Spider):
         self.random_sleep
         logger.info(f"route is '{self.format_url(url)}', have loaded.")
         return self.open(url)
+
+    def parse_date(self, data: BeautifulSoup) -> datetime:
+        tipad = data.find('div', attrs={'class': 'tipad'})
+        if tipad:
+            tipad_text = tipad.stripped_strings
+            return dateutil.parser.parse(
+                list(tipad_text)[1].replace('Posted:', ''))
+        return datetime.now()
 
     def parse_tid(self, url: Text) -> Text:
         return url.split('/')[-1][:-5]
@@ -106,6 +115,7 @@ class PictureSpider(Spider):
         self.parsed_data['imgs'] = list(self.parse_imgs(data))
         self.parsed_data['title'] = self.parse_title(url, data)
         self.parsed_data['author'] = self.parse_author(data)
+        self.parsed_data['date'] = self.parse_date(data)
 
         logger.info(f"route is '{self.format_url(url)}', have parsed "
                     f"{self.number_of_imgs} imgs.")
@@ -143,7 +153,7 @@ class PictureSpider(Spider):
             title=title,
             size=size,
             author=parsed_data['author'],
-            public_datetime=datetime.now(),
+            public_datetime=parsed_data['date'],
             link=link,
         )
         try:
@@ -155,8 +165,6 @@ class PictureSpider(Spider):
             raise err
         finally:
             db.session.close()
-        # db.session.add(picture)
-        # db.session.commit()
 
     def save_data(
         self,

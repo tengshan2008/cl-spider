@@ -176,7 +176,7 @@ class NovelSpider(Spider):
                 return title.replace(cate, ''), cate[1:-1]
         return title, 'UNKNOW'
 
-    def parse_public_datetime(self, data: BeautifulSoup) -> Text:
+    def parse_public_datetime(self, data: BeautifulSoup) -> datetime:
         tipad = data.find('div', attrs={'class': 'tipad'})
         if tipad:
             tipad_text = tipad.stripped_strings
