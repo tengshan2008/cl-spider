@@ -180,8 +180,10 @@ class NovelSpider(Spider):
         tipad = data.find('div', attrs={'class': 'tipad'})
         if tipad:
             tipad_text = tipad.stripped_strings
-            return dateutil.parser.parse(
-                list(tipad_text)[1].replace('Posted:', ''))
+            datetime_text = list(tipad_text)[1]
+            datetime_text = datetime_text.replace('Posted:', '')
+            datetime_text = datetime_text.replace('|', '')
+            return dateutil.parser.parse(datetime_text.strip())
         return datetime.now()
 
     def parse_author(self, data: BeautifulSoup) -> Text:
