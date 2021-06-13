@@ -192,22 +192,18 @@ class PictureSpider(Spider):
                     if size:
                         self.exec_database(parsed_data, object_name, size, url)
 
-    # @logger.catch
+    @logger.catch
     def get_latest(self, metadata: Optional[Dict[Text, Any]] = None) -> None:
         # 是否有待取的 URL
         while self.manager.has_new_url():
             # 获取一个新 URL
             url = self.manager.get_new_url()
-            try:
-                # 获取网页信息
-                data = self.load_data(url)
-                # 解析网页信息
-                parsed_data = self.parse_data(url, data)
-                # 保留有效信息
-                self.save_data(url, parsed_data, metadata)
-            except Exception as err:
-                logger.error(f'picture spider has error: {err}')
-                continue
+            # 获取网页信息
+            data = self.load_data(url)
+            # 解析网页信息
+            parsed_data = self.parse_data(url, data)
+            # 保留有效信息
+            self.save_data(url, parsed_data, metadata)
 
     @classmethod
     def load(cls, urlset: Set[Text]) -> "PictureSpider":

@@ -243,23 +243,21 @@ class NovelSpider(Spider):
         return share
 
     def exec_database(self, link: Text, size: int) -> None:
-        _query = Novel.query.filter_by(origin_id=self.parsed_data[TID_KEY])
-        if _query.first():
-            _query.update({
-                Novel.size: str(size),
-                Novel.updated_at: datetime.now(),
-            })
-            return
-
-        novel = Novel(
-            origin_id=self.parsed_data[TID_KEY],
-            title=self.parsed_data[TITLE_KEY],
-            author=self.parsed_data[AUTHOR_KEY],
-            public_datetime=self.parsed_data[PUBLIC_DATETIME_KEY],
-            category=self.parsed_data[CATEGORY_KEY],
-            link=link,
-            size=str(size),
-        )
+        novel = db.session.query(Novel).filter_by(
+            origin_id=self.parsed_data[TID_KEY]).first()
+        if novel:
+            novel.size = str(size)
+            novel.updated_at = datetime.now()
+        else:
+            novel = Novel(
+                origin_id=self.parsed_data[TID_KEY],
+                title=self.parsed_data[TITLE_KEY],
+                author=self.parsed_data[AUTHOR_KEY],
+                public_datetime=self.parsed_data[PUBLIC_DATETIME_KEY],
+                category=self.parsed_data[CATEGORY_KEY],
+                link=link,
+                size=str(size),
+            )
         try:
             db.session.add(novel)
             db.session.commit()
@@ -269,8 +267,6 @@ class NovelSpider(Spider):
             raise err
         finally:
             db.session.close()
-        # db.session.add(novel)
-        # db.session.commit()
 
     def merge_content(self, pages: List[Text]) -> Text:
         content = []
@@ -328,28 +324,17 @@ class NovelSpider(Spider):
                            int(page_range[-1]) + 1)
         ]
 
+    @logger.catch
     def get_latest(
         self,
         url: Text,
         metadata: Optional[Dict[Text, Any]] = None,
     ) -> None:
-        try:
-            pages = self.get_pages(url)
-        except Exception as err:
-            logger.error(f'novel spider - get_pages has error: {err}')
-            return None
+        pages = self.get_pages(url)
         self.manager.add_new_urls(set(pages))
 
         while self.manager.has_new_url():
             url = self.manager.get_new_url()
-            try:
-                data = self.load_data(url)
-                self.parse_data(url, data)
-            except Exception as err:
-                logger.error(f'novel spider has error: {err}')
-                continue
-        try:
+            data = self.load_data(url)
+            self.parse_data(url, data)
             self.save_data(pages, metadata)
-        except Exception as err:
-            logger.error(f'novel spider - save_data has error: {err}')
-            return None
