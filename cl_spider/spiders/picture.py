@@ -72,7 +72,8 @@ class PictureSpider(Spider):
 
     def parse_imgs(self, data: BeautifulSoup):
         imgs = data.body.find_all('img')
-        for i, img in enumerate(imgs):
+        cnt = 1
+        for img in imgs:
             link = ""
             for attr in IMG_ATTRS:
                 if attr in img.attrs:
@@ -96,7 +97,8 @@ class PictureSpider(Spider):
                     f'route is {self.format_url(link)}, ext is {ext}, not '
                     f'recognized')
                 continue
-            name = f"{i+1}.{ext}"
+            name = f"{cnt}.{ext}"
+            cnt += 1
 
             yield (link, name, ext)
 
