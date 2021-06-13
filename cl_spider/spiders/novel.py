@@ -337,4 +337,4 @@ class NovelSpider(Spider):
             url = self.manager.get_new_url()
             data = self.load_data(url)
             self.parse_data(url, data)
-            self.save_data(pages, metadata)
+        self.save_data(pages, metadata)
