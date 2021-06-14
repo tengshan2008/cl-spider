@@ -9,6 +9,8 @@ class Manager:
         self.queue = deque()  # 待抓取的网页
         self.visited = dict()  # 已抓取的网页
         self.limit = limit  # 进入待爬取队列重试上限
+        if self.limit is None:
+            self.limit = LIMIT
 
     def new_url_size(self) -> int:
         """获取待爬取 URL 集合的大小"""
