@@ -12,6 +12,12 @@ from cl_spider.spiders.manager import Manager
 from cl_spider.spiders.spider import Spider
 from loguru import logger
 
+TID_KEY = 'tid'
+IMGS_KEY = 'imgs'
+TITLE_KEY = 'title'
+AUTHOR_KEY = 'author'
+DATE_KEY = 'date'
+
 IMG_ATTRS = ['data-src', 'data-ssa', 'ess-data']
 
 
@@ -104,7 +110,7 @@ class PictureSpider(Spider):
 
     @property
     def number_of_imgs(self):
-        return len(self.parsed_data.get('imgs', []))
+        return len(self.parsed_data.get(IMGS_KEY, []))
 
     def parse_data(self, url: Text, data: BeautifulSoup) -> Dict[Text, Any]:
         if data is None:
@@ -113,11 +119,11 @@ class PictureSpider(Spider):
 
         self.parsed_data = {}
 
-        self.parsed_data['tid'] = self.parse_tid(url)
-        self.parsed_data['imgs'] = list(self.parse_imgs(data))
-        self.parsed_data['title'] = self.parse_title(url, data)
-        self.parsed_data['author'] = self.parse_author(data)
-        self.parsed_data['date'] = self.parse_date(data)
+        self.parsed_data[TID_KEY] = self.parse_tid(url)
+        self.parsed_data[IMGS_KEY] = list(self.parse_imgs(data))
+        self.parsed_data[TITLE_KEY] = self.parse_title(url, data)
+        self.parsed_data[AUTHOR_KEY] = self.parse_author(data)
+        self.parsed_data[DATE_KEY] = self.parse_date(data)
 
         logger.info(f"route is '{self.format_url(url)}', have parsed "
                     f"{self.number_of_imgs} imgs.")
@@ -151,11 +157,11 @@ class PictureSpider(Spider):
         link: Text,
     ) -> None:
         picture = Picture(
-            origin_id=parsed_data['tid'],
+            origin_id=parsed_data[TID_KEY],
             title=title,
             size=size,
-            author=parsed_data['author'],
-            public_datetime=parsed_data['date'],
+            author=parsed_data[AUTHOR_KEY],
+            public_datetime=parsed_data[DATE_KEY],
             link=link,
         )
         try:
@@ -184,11 +190,12 @@ class PictureSpider(Spider):
         uploader = Uploader(metadata)
         uploader.create_bucket(bucket_name)
 
-        for url, name, ext in parsed_data["imgs"]:
+        for url, name, ext in parsed_data[IMGS_KEY]:
             if self.check_object_not_exists(url):
                 response = self.download(url)
                 if response:
-                    object_name = f"{parsed_data['title']}/{name}"
+                    pub_date = parsed_data[DATE_KEY].strftime('%Y-%m')
+                    object_name = f'{pub_date}/{parsed_data[TITLE_KEY]}/{name}'
                     size = self.exec_minio(uploader, bucket_name, object_name,
                                            response.content, ext)
                     if size:
