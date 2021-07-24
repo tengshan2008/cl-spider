@@ -152,13 +152,14 @@ class PictureSpider(Spider):
     def exec_database(
         self,
         parsed_data: Dict[Text, Any],
-        title: Text,
+        name: Text,
         size: Text,
         link: Text,
     ) -> None:
         picture = Picture(
             origin_id=parsed_data[TID_KEY],
-            title=title,
+            title=parsed_data[TITLE_KEY],
+            pidx=name.split('.')[0],
             size=size,
             author=parsed_data[AUTHOR_KEY],
             public_datetime=parsed_data[DATE_KEY],
@@ -199,7 +200,7 @@ class PictureSpider(Spider):
                     size = self.exec_minio(uploader, bucket_name, object_name,
                                            response.content, ext)
                     if size:
-                        self.exec_database(parsed_data, object_name, size, url)
+                        self.exec_database(parsed_data, name, size, url)
 
     @logger.catch
     def get_latest(self, metadata: Optional[Dict[Text, Any]] = None) -> None:

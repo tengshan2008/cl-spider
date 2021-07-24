@@ -2,9 +2,11 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 from cl_spider.app import app, db
+from cl_spider.app.forms import (NovelsTaskForm, NovelTaskForm,
+                                 PictureTaskForm, VideoTaskForm)
 from cl_spider.app.models import Novel, Picture
-from cl_spider.config import (MINIO_ACCESS_KEY, MINIO_SECRET_KEY,
-                              MINIO_SERVER_ENDPOINT, PICTURE_BUCKET_NAME)
+from cl_spider.config import MINIO_SERVER_ENDPOINT, NOVEL_BUCKET_NAME, PICTURE_BUCKET_NAME
+from cl_spider.spiders import video
 from cl_spider.spiders.file_uploader import Uploader
 from flask import redirect
 from flask.helpers import flash, send_file
@@ -12,11 +14,7 @@ from flask_admin import Admin, BaseView, expose
 from flask_admin.base import AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.model import typefmt
-from flask_wtf import FlaskForm
 from markupsafe import Markup
-from wtforms.fields.html5 import IntegerField, URLField
-from wtforms.fields.simple import SubmitField, TextAreaField
-from wtforms.validators import DataRequired
 
 
 # Flask views
@@ -39,17 +37,9 @@ def link_formatter(view, context, model, name):
 
 
 def share_formatter(view, context, model, name):
-    # uploader = Uploader(
-    #     metadata={
-    #         'endpoint': MINIO_SERVER_ENDPOINT,
-    #         'access_key': MINIO_ACCESS_KEY,
-    #         'secret_key': MINIO_SECRET_KEY,
-    #     },
-    # )
-    uploader = Uploader()
     title = getattr(model, 'title')
-    share = uploader.get_object_share(PICTURE_BUCKET_NAME, title)
-    return Markup(f'<a href="{share}" target="_blank">SHARE</a>')
+    share = f'http://{MINIO_SERVER_ENDPOINT}/{PICTURE_BUCKET_NAME}/{title}'
+    return Markup(f'<a href="{share}" target="_blank">Share</a>')
 
 
 def date_format(view, value):
@@ -81,8 +71,10 @@ class NovelAdmin(CustomView):
 
     def download_formatter(self, context, model, name):
         # url = self.get_url('download_blob', id=model.id)
-        url = 'http://www.baidu.com'
-        return Markup(f'<a href="{url}" target="_blank">Download</a>')
+        date = getattr(model, 'public_datetime').strftime('%Y-%m')
+        title = getattr(model, 'title')
+        url = f'http://{MINIO_SERVER_ENDPOINT}/{NOVEL_BUCKET_NAME}/{date}/{title}.txt'
+        return Markup(f'<a href="{url}" download="">Download</a>')
 
     column_type_formatters = MY_DEFAULT_FORMATTERS
     column_searchable_list = ('title', )
@@ -115,6 +107,7 @@ class PictureAdmin(CustomView):
         'id': 'ID',
         'origin_id': 'TID',
         'title': u'标题',
+        'pidx': u'序号',
         'size': u'大小',
         'author': u'作者',
         'public_datetime': u'发布日期',
@@ -132,30 +125,6 @@ class PictureAdmin(CustomView):
 
     def __init__(self, session, **kwargs):
         super().__init__(Picture, session, **kwargs)
-
-
-class NovelTaskForm(FlaskForm):
-    url = URLField(label=u'网址：',
-                   validators=[
-                       DataRequired(message=u'网址不能为空'),
-                   ])
-    novel_submit = SubmitField(u'提交')
-
-
-class NovelsTaskForm(FlaskForm):
-    url = URLField(label=u'网址：',
-                   validators=[
-                       DataRequired(message=u'网址不能为空'),
-                   ])
-    start_page = IntegerField(label=u'起始页码',
-                              validators=[
-                                  DataRequired(message=u'不能为空'),
-                              ])
-    end_page = IntegerField(label=u'终止页码',
-                            validators=[
-                                DataRequired(message=u'不能为空'),
-                            ])
-    novels_submit = SubmitField(label=u'提交')
 
 
 class NovelTaskView(BaseView):
@@ -195,19 +164,6 @@ class NovelTaskView(BaseView):
                            novels_form=novels_form)
 
 
-class PictureTaskForm(FlaskForm):
-    valida = [
-        DataRequired(message=u'网址不能为空'),
-    ]
-    render_kw = {
-        'class': 'form-control text-body',
-        'rows': 10,
-        'placeholder': '请输入网址，一行一条。',
-    }
-    url = TextAreaField(label=u'网址：', validators=valida, render_kw=render_kw)
-    submit = SubmitField(u'提交')
-
-
 class PictureTaskView(BaseView):
     @expose('/', methods=['GET', 'POST'])
     def index(self):
@@ -231,6 +187,23 @@ class PictureTaskView(BaseView):
         return self.render('picture_task.html', form=form)
 
 
+class VideoTaskView(BaseView):
+    @expose('/', methods=['GET', 'POST'])
+    def index(self):
+
+        form = VideoTaskForm()
+        if form.validate_on_submit():
+            if form.url:
+                executor = ThreadPoolExecutor(max_workers=1)
+                executor.submit(video.download, (form.url.data))
+                flash(u'提交成功')
+                return redirect('/admin/video')
+            else:
+                flash(u'校验错误')
+
+        return self.render('video_task.html', form=form)
+
+
 # create admin with custom base template
 index_view = AdminIndexView(name=u'导航管理', template='index.html', url='/admin')
 admin = Admin(
@@ -244,6 +217,7 @@ admin.add_view(NovelAdmin(db.session, name=u'小说'))
 admin.add_view(PictureAdmin(db.session, name=u'图片'))
 admin.add_view(NovelTaskView(name=u'小说', category=u'新建'))
 admin.add_view(PictureTaskView(name=u'图片', category=u'新建'))
+admin.add_view(VideoTaskView(name=u'视频', category=u'新建'))
 
 
 def init_db():

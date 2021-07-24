@@ -29,6 +29,7 @@ class Picture(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     origin_id = db.Column(db.String(255), default='UNKNOW')
     title = db.Column(db.String(255), default='UNKNOW')
+    pidx = db.Column(db.String(255), default='0')
     size = db.Column(db.String(255), default='0 KB')
     author = db.Column(db.String(255), nullable=True)
     public_datetime = db.Column(db.DateTime, nullable=True)
