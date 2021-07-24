@@ -5,7 +5,8 @@ from cl_spider.app import app, db
 from cl_spider.app.forms import (NovelsTaskForm, NovelTaskForm,
                                  PictureTaskForm, VideoTaskForm)
 from cl_spider.app.models import Novel, Picture
-from cl_spider.config import MINIO_SERVER_ENDPOINT, NOVEL_BUCKET_NAME, PICTURE_BUCKET_NAME
+from cl_spider.config import (MINIO_SERVER_ENDPOINT, NOVEL_BUCKET_NAME,
+                              PICTURE_BUCKET_NAME)
 from cl_spider.spiders import video
 from cl_spider.spiders.file_uploader import Uploader
 from flask import redirect
@@ -38,7 +39,9 @@ def link_formatter(view, context, model, name):
 
 def share_formatter(view, context, model, name):
     title = getattr(model, 'title')
-    share = f'http://{MINIO_SERVER_ENDPOINT}/{PICTURE_BUCKET_NAME}/{title}'
+    pidx = getattr(model, 'pidx')
+    share = (f'http://{MINIO_SERVER_ENDPOINT}/{PICTURE_BUCKET_NAME}/'
+             f'{title}/{pidx}')
     return Markup(f'<a href="{share}" target="_blank">Share</a>')
 
 
@@ -73,7 +76,8 @@ class NovelAdmin(CustomView):
         # url = self.get_url('download_blob', id=model.id)
         date = getattr(model, 'public_datetime').strftime('%Y-%m')
         title = getattr(model, 'title')
-        url = f'http://{MINIO_SERVER_ENDPOINT}/{NOVEL_BUCKET_NAME}/{date}/{title}.txt'
+        url = (f'http://{MINIO_SERVER_ENDPOINT}/{NOVEL_BUCKET_NAME}/'
+               f'{date}/{title}.txt')
         return Markup(f'<a href="{url}" download="">Download</a>')
 
     column_type_formatters = MY_DEFAULT_FORMATTERS

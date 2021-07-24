@@ -159,7 +159,7 @@ class PictureSpider(Spider):
         picture = Picture(
             origin_id=parsed_data[TID_KEY],
             title=parsed_data[TITLE_KEY],
-            pidx=name.split('.')[0],
+            pidx=name,
             size=size,
             author=parsed_data[AUTHOR_KEY],
             public_datetime=parsed_data[DATE_KEY],
