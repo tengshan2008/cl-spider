@@ -40,8 +40,9 @@ def link_formatter(view, context, model, name):
 def share_formatter(view, context, model, name):
     title = getattr(model, 'title')
     pidx = getattr(model, 'pidx')
+    date = getattr(model, 'public_datetime').strftime('%Y-%m')
     share = (f'http://{MINIO_SERVER_ENDPOINT}/{PICTURE_BUCKET_NAME}/'
-             f'{title}/{pidx}')
+             f'{date}/{title}/{pidx}')
     return Markup(f'<a href="{share}" target="_blank">Share</a>')
 
 
