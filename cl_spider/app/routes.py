@@ -4,7 +4,7 @@ from datetime import date
 from cl_spider.app import app, db
 from cl_spider.app.forms import (NovelsTaskForm, NovelTaskForm,
                                  PictureTaskForm, VideoTaskForm)
-from cl_spider.app.models import Novel, Picture
+from cl_spider.app.models import Novel, Picture, Task
 from cl_spider.config import (MINIO_SERVER_ENDPOINT, NOVEL_BUCKET_NAME,
                               PICTURE_BUCKET_NAME)
 from cl_spider.spiders import video
@@ -132,6 +132,27 @@ class PictureAdmin(CustomView):
         super().__init__(Picture, session, **kwargs)
 
 
+class TaskAdmin(CustomView):
+    column_type_formatters = MY_DEFAULT_FORMATTERS
+    # column_searchable_list = ('target', )
+    column_labels = {
+        'id': 'ID',
+        'target': u'对象',
+        'version': u'版本',
+        'info': u'详细信息',
+        'cost_time': u'耗时',
+        'status': u'状态',
+        'updated_at': u'更新日期'
+    }
+    column_list = list(column_labels.keys())
+    column_default_sort = ('updated_at', True)
+    can_set_page_size = True
+    can_create, can_delete, can_edit = False, False, False
+
+    def __init__(self, session, **kwargs):
+        super().__init__(Task, session, **kwargs)
+
+
 class NovelTaskView(BaseView):
     @expose('/', methods=['GET', 'POST'])
     def index(self):
@@ -220,6 +241,7 @@ admin = Admin(
 
 admin.add_view(NovelAdmin(db.session, name=u'小说'))
 admin.add_view(PictureAdmin(db.session, name=u'图片'))
+admin.add_view(TaskAdmin(db.session, name=u'任务'))
 admin.add_view(NovelTaskView(name=u'小说', category=u'新建'))
 admin.add_view(PictureTaskView(name=u'图片', category=u'新建'))
 admin.add_view(VideoTaskView(name=u'视频', category=u'新建'))
