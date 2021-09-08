@@ -14,7 +14,9 @@ HOST = 'mysql'
 PORT = '3306'
 DATABASE = 'cl'
 
-SQLALCHEMY_DATABASE_URI = f'{DIALECT}+{DRIVER}://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}?charset=utf8mb4'
+SQLALCHEMY_DATABASE_URI = (
+    f'{DIALECT}+{DRIVER}://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}'
+    '?charset=utf8mb4')
 
 # secret key
 SECRET_KEY = 'very very hard to guess token'
