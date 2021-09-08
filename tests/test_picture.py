@@ -21,7 +21,7 @@ class PictureSpiderTest(unittest.TestCase):
 
     def test_parse_data(self):
         # url = TEST_URL
-        url = "https://cl.192x.xyz/htm_data/2105/7/4474838.html"
+        url = "https://cl.135x.xyz/htm_data/2106/7/4550293.html"
         ps = PictureSpider()
         data = ps.load_data(url)
         result = ps.parse_data(url, data)

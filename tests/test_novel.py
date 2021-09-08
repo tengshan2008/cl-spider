@@ -3,6 +3,7 @@ from cl_spider.spiders.novel import NovelSpider
 
 TEST_SINGLE_PAGE = 'https://cl.192x.xyz/htm_data/2105/20/4487838.html'
 TEST_MULTIPLE_PAGE = 'https://cl.192x.xyz/htm_data/2104/20/4456719.html'
+TEST_SINGLE_PAGE = 'https://cl.135x.xyz/htm_data/2009/20/4076366.html'
 
 
 class NovelSpiderTest(unittest.TestCase):
