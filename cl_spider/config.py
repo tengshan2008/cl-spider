@@ -7,4 +7,5 @@ MINIO_SECRET_KEY = "8rO8qpl3VASXagqX"
 PICTURE_BUCKET_NAME = "picture"
 NOVEL_BUCKET_NAME = "novel"
 
-MINIO_SERVER_ENDPOINT = "raspberrypi4.local:9090"
+MINIO_SERVER_HOST = "raspberrypi4.local"
+MINIO_SERVER_PORT = "9090"

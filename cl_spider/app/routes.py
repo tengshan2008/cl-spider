@@ -5,7 +5,7 @@ from cl_spider.app import app, db
 from cl_spider.app.forms import (NovelsTaskForm, NovelTaskForm,
                                  PictureTaskForm, VideoTaskForm)
 from cl_spider.app.models import Novel, Picture, Task
-from cl_spider.config import (MINIO_SERVER_ENDPOINT, NOVEL_BUCKET_NAME,
+from cl_spider.config import (MINIO_SERVER_PORT, NOVEL_BUCKET_NAME,
                               PICTURE_BUCKET_NAME)
 from cl_spider.spiders import video
 from cl_spider.spiders.file_uploader import Uploader
@@ -16,6 +16,7 @@ from flask_admin.base import AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.model import typefmt
 from markupsafe import Markup
+import cl_spider.utils
 
 
 # Flask views
@@ -41,7 +42,8 @@ def share_formatter(view, context, model, name):
     title = getattr(model, 'title')
     pidx = getattr(model, 'pidx')
     date = getattr(model, 'public_datetime').strftime('%Y-%m')
-    share = (f'http://{MINIO_SERVER_ENDPOINT}/{PICTURE_BUCKET_NAME}/'
+    host = view.get_url()
+    share = (f'http://{host}:{MINIO_SERVER_PORT}/{PICTURE_BUCKET_NAME}/'
              f'{date}/{title}/{pidx}')
     return Markup(f'<a href="{share}" target="_blank">Share</a>')
 
@@ -77,7 +79,8 @@ class NovelAdmin(CustomView):
         # url = self.get_url('download_blob', id=model.id)
         date = getattr(model, 'public_datetime').strftime('%Y-%m')
         title = getattr(model, 'title')
-        url = (f'http://{MINIO_SERVER_ENDPOINT}/{NOVEL_BUCKET_NAME}/'
+        host = cl_spider.utils.get_source_url()
+        url = (f'http://{host}:{MINIO_SERVER_PORT}/{NOVEL_BUCKET_NAME}/'
                f'{date}/{title}.txt')
         return Markup(f'<a href="{url}" download="">Download</a>')
 
