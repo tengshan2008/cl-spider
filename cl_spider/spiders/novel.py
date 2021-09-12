@@ -12,6 +12,7 @@ from cl_spider.config import NOVEL_BUCKET_NAME
 from cl_spider.spiders.file_uploader import Uploader
 from cl_spider.spiders.manager import Manager
 from cl_spider.spiders.spider import Spider
+from cl_spider import utils
 from loguru import logger
 
 TID_KEY = 'tid'
@@ -108,21 +109,21 @@ class IndexSpider(Spider):
             novel_spider = NovelSpider(novel_info=novel_info)
             novel_spider.get_latest(novel_url, metadata)
 
-    def get_pages(self, url: Text, start: int, end: int) -> List[Text]:
-        host = self.format_url_host(url)
-        link = f"{host}/thread0806.php?fid=20"
+    def get_pages(self, start: int, end: int) -> List[Text]:
+        # host = self.format_url_host(url)
+        url, _ = utils.get_source_url()
+        link = f"https://{url}/thread0806.php?fid=20"
 
         return [f'{link}&page={i}' for i in range(start, end + 1)]
 
     def get_latest(
         self,
-        url: Text,
         start: int,
         end: int,
         metadata: Optional[Dict[Text, Any]] = None,
     ) -> None:
         try:
-            pages = self.get_pages(url, start, end)
+            pages = self.get_pages(start, end)
         except Exception as err:
             logger.error(f'index spider - get_pages has error: {err}')
             return None

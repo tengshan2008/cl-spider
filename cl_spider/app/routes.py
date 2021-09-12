@@ -1,12 +1,13 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
+import cl_spider.utils
 from cl_spider.app import app, db
 from cl_spider.app.forms import (NovelsTaskForm, NovelTaskForm,
                                  PictureTaskForm, VideoTaskForm)
 from cl_spider.app.models import Novel, Picture, Task
-from cl_spider.config import (MINIO_SERVER_PORT, NOVEL_BUCKET_NAME,
-                              PICTURE_BUCKET_NAME)
+from cl_spider.config import (MINIO_SERVER_HOST, MINIO_SERVER_PORT,
+                              NOVEL_BUCKET_NAME, PICTURE_BUCKET_NAME)
 from cl_spider.spiders import video
 from cl_spider.spiders.file_uploader import Uploader
 from flask import redirect
@@ -16,7 +17,6 @@ from flask_admin.base import AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.model import typefmt
 from markupsafe import Markup
-import cl_spider.utils
 
 
 # Flask views
@@ -42,9 +42,9 @@ def share_formatter(view, context, model, name):
     title = getattr(model, 'title')
     pidx = getattr(model, 'pidx')
     date = getattr(model, 'public_datetime').strftime('%Y-%m')
-    host = view.get_url()
-    share = (f'http://{host}:{MINIO_SERVER_PORT}/{PICTURE_BUCKET_NAME}/'
-             f'{date}/{title}/{pidx}')
+    # host = view.get_url()
+    share = (f'http://{MINIO_SERVER_HOST}:{MINIO_SERVER_PORT}/'
+             f'{PICTURE_BUCKET_NAME}/{date}/{title}/{pidx}')
     return Markup(f'<a href="{share}" target="_blank">Share</a>')
 
 
@@ -177,10 +177,10 @@ class NovelTaskView(BaseView):
             if novels_form.start_page and novels_form.end_page:
                 spider = IndexSpider()
                 args = [
-                    novels_form.url.data,
                     novels_form.start_page.data,
                     novels_form.end_page.data,
                 ]
+                print('args', args)
                 executor = ThreadPoolExecutor(max_workers=1)
                 executor.submit(lambda p: spider.get_latest(*p), args)
                 flash(u'提交成功')

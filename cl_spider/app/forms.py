@@ -10,8 +10,8 @@ class NovelTaskForm(FlaskForm):
 
 
 class NovelsTaskForm(FlaskForm):
-    valida = [DataRequired(message=u'网址不能为空')]
-    url = URLField(label=u'网址：', validators=valida)
+    # valida = [DataRequired(message=u'网址不能为空')]
+    # url = URLField(label=u'网址：', validators=valida)
     valida = [DataRequired(message=u'不能为空')]
     start_page = IntegerField(label=u'起始页码', validators=valida)
     valida = [DataRequired(message=u'不能为空')]
