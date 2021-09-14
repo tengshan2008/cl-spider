@@ -74,14 +74,14 @@ class CustomView(ModelView):
 class NovelAdmin(CustomView):
     def __init__(self, session, **kwargs):
         super().__init__(Novel, session, **kwargs)
+        # self.download_host = cl_spider.utils.get_source_url()
 
     def download_formatter(self, context, model, name):
         # url = self.get_url('download_blob', id=model.id)
         date = getattr(model, 'public_datetime').strftime('%Y-%m')
         title = getattr(model, 'title')
-        host = cl_spider.utils.get_source_url()
-        url = (f'http://{host}:{MINIO_SERVER_PORT}/{NOVEL_BUCKET_NAME}/'
-               f'{date}/{title}.txt')
+        url = (f'http://{MINIO_SERVER_HOST}:{MINIO_SERVER_PORT}/'
+               f'{NOVEL_BUCKET_NAME}/{date}/{title}.txt')
         return Markup(f'<a href="{url}" download="">Download</a>')
 
     column_type_formatters = MY_DEFAULT_FORMATTERS
@@ -180,7 +180,6 @@ class NovelTaskView(BaseView):
                     novels_form.start_page.data,
                     novels_form.end_page.data,
                 ]
-                print('args', args)
                 executor = ThreadPoolExecutor(max_workers=1)
                 executor.submit(lambda p: spider.get_latest(*p), args)
                 flash(u'提交成功')
