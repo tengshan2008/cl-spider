@@ -155,6 +155,7 @@ class PictureSpider(Spider):
         name: Text,
         size: Text,
         link: Text,
+        task_id: Text,
     ) -> None:
         picture = Picture(
             origin_id=parsed_data[TID_KEY],
@@ -164,6 +165,7 @@ class PictureSpider(Spider):
             author=parsed_data[AUTHOR_KEY],
             public_datetime=parsed_data[DATE_KEY],
             link=link,
+            task_id=task_id,
         )
         try:
             db.session.add(picture)
@@ -178,6 +180,7 @@ class PictureSpider(Spider):
     def save_data(
         self,
         url: Text,
+        task_id: Text,
         parsed_data: Dict[Text, Any],
         metadata: Optional[Dict[Text, Any]] = None,
     ) -> None:
@@ -200,10 +203,12 @@ class PictureSpider(Spider):
                     size = self.exec_minio(uploader, bucket_name, object_name,
                                            response.content, ext)
                     if size:
-                        self.exec_database(parsed_data, name, size, url)
+                        self.exec_database(parsed_data, name, size, url,
+                                           task_id)
 
     @logger.catch
     def get_latest(self, metadata: Optional[Dict[Text, Any]] = None) -> None:
+        task_id = self.new_task('picture', 'P001', list(self.manager.queue))
         # 是否有待取的 URL
         while self.manager.has_new_url():
             # 获取一个新 URL
@@ -213,7 +218,7 @@ class PictureSpider(Spider):
             # 解析网页信息
             parsed_data = self.parse_data(url, data)
             # 保留有效信息
-            self.save_data(url, parsed_data, metadata)
+            self.save_data(url, task_id, parsed_data, metadata)
 
     @classmethod
     def load(cls, urlset: Set[Text]) -> "PictureSpider":

@@ -1,11 +1,14 @@
 import os
 import random
 import time
+import string
 import urllib.parse
-from typing import Dict, Optional, Text, Tuple
+from typing import Dict, List, Optional, Text, Tuple
 
 import requests.exceptions
 from bs4 import BeautifulSoup
+from cl_spider.app import db
+from cl_spider.app.models import Task
 from fake_useragent import FakeUserAgent
 from loguru import logger
 from mechanicalsoup import StatefulBrowser as Browser
@@ -77,6 +80,27 @@ class Spider:
 
         _, response = self._open(url, requests_adapters=requests_adapters)
         return response
+
+    def new_task(self, target: Text, version: Text,
+                 info: List) -> Text:
+        letters = string.ascii_letters + string.digits
+        task_id = ''.join(random.sample(letters, 6))
+        task = Task(
+            task_id=task_id,
+            target=target,
+            version=version,
+            info=str(info),
+        )
+        try:
+            db.session.add(task)
+            db.session.commit()
+        except Exception as err:
+            db.session.rollback()
+            logger.error(f'task execute database has error: {err}')
+            raise err
+        finally:
+            db.session.close()
+        return task_id
 
     @staticmethod
     def format_url(url: Text) -> Text:
