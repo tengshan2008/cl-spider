@@ -60,14 +60,6 @@ def title_formatter(view, content, model, name):
     return Markup(f'<p>{title}</p>')
 
 
-def cost_time_formatter(view, content, model, name):
-    return 'NULL'
-
-
-def status_formatter(view, content, model, name):
-    return 'NULL'
-
-
 MY_DEFAULT_FORMATTERS = dict(typefmt.BASE_FORMATTERS)
 MY_DEFAULT_FORMATTERS.update({
     date: date_formatter,
@@ -144,6 +136,12 @@ class PictureAdmin(CustomView):
 
 
 class TaskAdmin(CustomView):
+    def cost_time_formatter(self, content, model, name):
+        return 'NULL'
+
+    def status_formatter(self, content, model, name):
+        return 'NULL'
+
     column_type_formatters = MY_DEFAULT_FORMATTERS
     # column_searchable_list = ('target', )
     column_labels = {
