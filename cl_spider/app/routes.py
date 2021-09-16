@@ -48,11 +48,11 @@ def share_formatter(view, context, model, name):
     return Markup(f'<a href="{share}" target="_blank">Share</a>')
 
 
-def date_format(view, value):
+def date_formatter(view, value):
     return value.strftime('%Y-%m-%d %H:%M')
 
 
-def title_format(view, content, model, name):
+def title_formatter(view, content, model, name):
     title = getattr(model, name)
     if len(title) > 20:
         short = f'{title[:20]} ...'
@@ -60,9 +60,17 @@ def title_format(view, content, model, name):
     return Markup(f'<p>{title}</p>')
 
 
+def cost_time_formatter(view, content, model, name):
+    return 'NULL'
+
+
+def status_formatter(view, content, model, name):
+    return 'NULL'
+
+
 MY_DEFAULT_FORMATTERS = dict(typefmt.BASE_FORMATTERS)
 MY_DEFAULT_FORMATTERS.update({
-    date: date_format,
+    date: date_formatter,
 })
 
 
@@ -99,7 +107,7 @@ class NovelAdmin(CustomView):
     }
     column_formatters = {
         'link': link_formatter,
-        'title': title_format,
+        'title': title_formatter,
         'download': download_formatter,
     }
     column_list = list(column_labels.keys())
@@ -124,7 +132,7 @@ class PictureAdmin(CustomView):
     }
     column_formatters = {
         'share': share_formatter,
-        'title': title_format,
+        'title': title_formatter,
     }
     column_list = list(column_labels.keys())
     column_default_sort = ('updated_at', True)
@@ -142,13 +150,17 @@ class TaskAdmin(CustomView):
         'id': 'ID',
         'target': u'对象',
         'version': u'版本',
+        'created_at': u'开始时间',
         'info': u'详细信息',
         'cost_time': u'耗时',
         'status': u'状态',
-        'updated_at': u'更新日期'
+    }
+    column_formatters = {
+        'cost_time': cost_time_formatter,
+        'status': status_formatter,
     }
     column_list = list(column_labels.keys())
-    column_default_sort = ('updated_at', True)
+    column_default_sort = ('created_at', True)
     can_set_page_size = True
     can_create, can_delete, can_edit = False, False, False
 
