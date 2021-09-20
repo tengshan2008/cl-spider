@@ -185,6 +185,8 @@ class TaskAdmin(CustomView):
         if target == 'novel':
             row = Novel.query.filter_by(task_id=task_id).order_by(
                 Novel.updated_at.desc()).first()
+        if not row:
+            return '-'
         if (datetime.now() - row.updated_at).seconds < 10 * 60:
             return 'RUNNING'
 
