@@ -13,6 +13,7 @@ class Novel(db.Model):
     category = db.Column(db.String(255), nullable=True)
     link = db.Column(db.String(255), nullable=True)
     size = db.Column(db.Integer, default=0)
+    task_id = db.Column(db.String(255), nullable=True)
     status = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now)

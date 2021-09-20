@@ -5,7 +5,8 @@ from cl_spider import utils
 from cl_spider.app import app, db
 from cl_spider.app.forms import (NovelsTaskForm, NovelTaskForm,
                                  PictureTaskForm, VideoTaskForm)
-from cl_spider.app.models import Novel, Picture, PictureTask, Task
+from cl_spider.app.models import (Novel, NovelIndexTask, Picture, PictureTask,
+                                  Task)
 from cl_spider.config import (MINIO_SERVER_HOST, MINIO_SERVER_PORT,
                               NOVEL_BUCKET_NAME, PICTURE_BUCKET_NAME)
 from cl_spider.spiders import video
@@ -142,19 +143,30 @@ class TaskAdmin(CustomView):
         task_id = getattr(model, 'task_id')
         if target == 'picture':
             row = Picture.query.filter_by(task_id=task_id).order_by(
-                Picture.created_at.desc()).first()
-        seconds = (row.created_at - created_at).seconds
+                Picture.updated_at.desc()).first()
+        elif target == 'novel':
+            row = Novel.query.filter_by(task_id=task_id).order_by(
+                Novel.updated_at.desc()).first()
+        if not row:
+            return '-'
+        seconds = (row.updated_at - created_at).seconds
         return utils.seconds2humanView(seconds)
 
     def info_formatter(self, content, model, name):
         task_id = getattr(model, 'task_id')
-        return Markup(f'<a href="/admin/task/picture/{task_id}">详情</a>')
+        target = getattr(model, 'target')
+        if target == 'picture':
+            return Markup(f'<a href="/admin/task/picture/{task_id}">详情</a>')
+        elif target == 'novel':
+            return Markup(f'<a href="/admin/task/novel/{task_id}">详情</a>')
 
     def status_formatter(self, content, model, name):
         task_id = getattr(model, 'task_id')
         target = getattr(model, 'target')
 
-        items = self._get_detail(task_id)
+        items = self.picture_detail(task_id)
+        if len(items) == 0:
+            return '-'
         finish = True
         for item in items:
             if item['complete'] == '/':
@@ -169,8 +181,11 @@ class TaskAdmin(CustomView):
 
         if target == 'picture':
             row = Picture.query.filter_by(task_id=task_id).order_by(
-                Picture.created_at.desc()).first()
-        if (datetime.now() - row.created_at).seconds < 10 * 60:
+                Picture.updated_at.desc()).first()
+        if target == 'novel':
+            row = Novel.query.filter_by(task_id=task_id).order_by(
+                Novel.updated_at.desc()).first()
+        if (datetime.now() - row.updated_at).seconds < 10 * 60:
             return 'RUNNING'
 
         return 'FAIL'
@@ -199,7 +214,7 @@ class TaskAdmin(CustomView):
     def __init__(self, session, **kwargs):
         super().__init__(Task, session, **kwargs)
 
-    def _get_detail(self, task_id):
+    def picture_detail(self, task_id):
         task_rows = PictureTask.query.filter_by(task_id=task_id).all()
         items = []
         append = items.append
@@ -225,9 +240,25 @@ class TaskAdmin(CustomView):
         return items
 
     @expose('/picture/<task_id>', methods=['GET'])
-    def get_detail(self, task_id):
+    def get_picture_detail(self, task_id):
         return self.render('picture_task_detail.html',
-                           items=self._get_detail(task_id))
+                           items=self.picture_detail(task_id))
+
+    def novel_detail(self, task_id):
+        row = NovelIndexTask.query.filter_by(task_id=task_id).first()
+        items = []
+        for idx, page in enumerate(range(row.start_index, row.end_index + 1)):
+            items.append({
+                'idx': idx + 1,
+                'page_idx': page,
+                'complete': '/',
+            })
+        return items
+
+    @expose('/novel/<task_id>', methods=['GET'])
+    def get_novel_detail(self, task_id):
+        return self.render('novel_task_detail.html',
+                           items=self.novel_detail(task_id))
 
 
 class NovelTaskView(BaseView):

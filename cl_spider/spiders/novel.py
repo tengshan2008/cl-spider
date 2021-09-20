@@ -7,7 +7,7 @@ import bs4.element
 import dateutil.parser
 from bs4 import BeautifulSoup
 from cl_spider.app import db
-from cl_spider.app.models import Novel
+from cl_spider.app.models import Novel, NovelIndexTask
 from cl_spider.config import NOVEL_BUCKET_NAME
 from cl_spider.spiders.file_uploader import Uploader
 from cl_spider.spiders.manager import Manager
@@ -116,12 +116,28 @@ class IndexSpider(Spider):
 
         return [f'{link}&page={i}' for i in range(start, end + 1)]
 
+    def new_novel_task(self, task_id, start, end):
+        task = NovelIndexTask(task_id=task_id,
+                              start_index=start,
+                              end_index=end)
+        try:
+            db.session.add(task)
+            db.session.commit()
+        except Exception as err:
+            db.session.rollback()
+            logger.error(f'novel index task execute database has error: {err}')
+            raise err
+        finally:
+            db.session.close()
+
     def get_latest(
         self,
         start: int,
         end: int,
         metadata: Optional[Dict[Text, Any]] = None,
     ) -> None:
+        task_id = self.new_task('novel', 'N001')
+        self.new_novel_task(task_id, start, end)
         try:
             pages = self.get_pages(start, end)
         except Exception as err:
