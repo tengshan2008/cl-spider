@@ -138,7 +138,12 @@ class PictureAdmin(CustomView):
 class TaskAdmin(CustomView):
     def cost_time_formatter(self, content, model, name):
         created_at = getattr(model, 'created_at')
-        seconds = (datetime.now() - created_at).seconds
+        target = getattr(model, 'target')
+        task_id = getattr(model, 'task_id')
+        if target == 'picture':
+            row = Picture.query.filter_by(task_id=task_id).order_by(
+                Picture.created_at.desc()).first()
+        seconds = (row.created_at - created_at).seconds
         return utils.seconds2humanView(seconds)
 
     def info_formatter(self, content, model, name):
@@ -146,7 +151,29 @@ class TaskAdmin(CustomView):
         return Markup(f'<a href="/admin/task/picture/{task_id}">详情</a>')
 
     def status_formatter(self, content, model, name):
-        return '-'
+        task_id = getattr(model, 'task_id')
+        target = getattr(model, 'target')
+
+        items = self._get_detail(task_id)
+        finish = True
+        for item in items:
+            if item['complete'] == '/':
+                finish = False
+                break
+            cnt, total = item['complete'][:-1].split('/')
+            if cnt != total:
+                finish = False
+                break
+        if finish:
+            return 'FINISH'
+
+        if target == 'picture':
+            row = Picture.query.filter_by(task_id=task_id).order_by(
+                Picture.created_at.desc()).first()
+        if (datetime.now() - row.created_at).seconds < 10 * 60:
+            return 'RUNNING'
+
+        return 'FAIL'
 
     column_type_formatters = MY_DEFAULT_FORMATTERS
     # column_searchable_list = ('target', )
@@ -172,8 +199,7 @@ class TaskAdmin(CustomView):
     def __init__(self, session, **kwargs):
         super().__init__(Task, session, **kwargs)
 
-    @expose('/picture/<task_id>', methods=['GET'])
-    def get_detail(self, task_id):
+    def _get_detail(self, task_id):
         task_rows = PictureTask.query.filter_by(task_id=task_id).all()
         items = []
         append = items.append
@@ -196,7 +222,12 @@ class TaskAdmin(CustomView):
                     f'{task_row.link}</a>')
                 item['complete'] = '/'
                 append(item)
-        return self.render('picture_task_detail.html', items=items)
+        return items
+
+    @expose('/picture/<task_id>', methods=['GET'])
+    def get_detail(self, task_id):
+        return self.render('picture_task_detail.html',
+                           items=self._get_detail(task_id))
 
 
 class NovelTaskView(BaseView):
