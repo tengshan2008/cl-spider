@@ -31,14 +31,42 @@ class Task(db.Model):
     task_id = db.Column(db.String(255))
     target = db.Column(db.String(255))
     version = db.Column(db.String(255), nullable=True)
-    info = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     def __unicode__(self):
         return self.task_id
 
     def __repr__(self):
-        return f'<novel_task {self.task_id}>'
+        return f'<task {self.task_id}>'
+
+
+class PictureTask(db.Model):
+    __tablename__ = 'picture_task'
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.String(255))
+    link = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+    def __unicode__(self):
+        return self.id
+
+    def __repr__(self):
+        return f'<picture_task {self.id}>'
+
+
+class NovelIndexTask(db.Model):
+    __tablename__ = 'novel_index_task'
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.String(255))
+    start_index = db.Column(db.Integer)
+    end_index = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+    def __unicode__(self):
+        return self.id
+
+    def __repr__(self):
+        return f'<novel_index_task {self.id}>'
 
 
 class Picture(db.Model):

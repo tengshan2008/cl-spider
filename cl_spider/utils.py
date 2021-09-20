@@ -18,6 +18,26 @@ def bit2humanView(bit_val: int) -> Text:
     return f'{bit_val} bit'
 
 
+def seconds2humanView(seconds: int) -> Text:
+    result = []
+    append = result.append
+    if seconds >= 24 * 60 * 60:
+        days = seconds // (24 * 60 * 60)
+        seconds -= days * (24 * 60 * 60)
+        append(f'{days} DAY ')
+    if seconds >= 60 * 60:
+        hours = seconds // (60 * 60)
+        seconds -= hours * (60 * 60)
+        append(f'{hours}h')
+    if seconds >= 60:
+        minus = seconds // 60
+        seconds -= minus * 60
+        append(f'{minus}m')
+    if seconds != 0:
+        append(f'{seconds}s')
+    return ''.join(result)
+
+
 def request_source_url():
     url = 'https://user.xunfss.com/app/listapp.php'
     data = {'a': 'get18', 'system': 'pc'}

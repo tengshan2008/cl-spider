@@ -81,15 +81,13 @@ class Spider:
         _, response = self._open(url, requests_adapters=requests_adapters)
         return response
 
-    def new_task(self, target: Text, version: Text,
-                 info: List) -> Text:
+    def new_task(self, target: Text, version: Text) -> Text:
         letters = string.ascii_letters + string.digits
         task_id = ''.join(random.sample(letters, 6))
         task = Task(
             task_id=task_id,
             target=target,
             version=version,
-            info=str(info),
         )
         try:
             db.session.add(task)

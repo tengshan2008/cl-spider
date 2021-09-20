@@ -1,11 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, datetime
 
-import cl_spider.utils
+from cl_spider import utils
 from cl_spider.app import app, db
 from cl_spider.app.forms import (NovelsTaskForm, NovelTaskForm,
                                  PictureTaskForm, VideoTaskForm)
-from cl_spider.app.models import Novel, Picture, Task
+from cl_spider.app.models import Novel, Picture, PictureTask, Task
 from cl_spider.config import (MINIO_SERVER_HOST, MINIO_SERVER_PORT,
                               NOVEL_BUCKET_NAME, PICTURE_BUCKET_NAME)
 from cl_spider.spiders import video
@@ -137,10 +137,16 @@ class PictureAdmin(CustomView):
 
 class TaskAdmin(CustomView):
     def cost_time_formatter(self, content, model, name):
-        return 'NULL'
+        created_at = getattr(model, 'created_at')
+        seconds = (datetime.now() - created_at).seconds
+        return utils.seconds2humanView(seconds)
+
+    def info_formatter(self, content, model, name):
+        task_id = getattr(model, 'task_id')
+        return Markup(f'<a href="/admin/task/picture/{task_id}">详情</a>')
 
     def status_formatter(self, content, model, name):
-        return 'NULL'
+        return '-'
 
     column_type_formatters = MY_DEFAULT_FORMATTERS
     # column_searchable_list = ('target', )
@@ -155,6 +161,7 @@ class TaskAdmin(CustomView):
     }
     column_formatters = {
         'cost_time': cost_time_formatter,
+        'info': info_formatter,
         'status': status_formatter,
     }
     column_list = list(column_labels.keys())
@@ -164,6 +171,32 @@ class TaskAdmin(CustomView):
 
     def __init__(self, session, **kwargs):
         super().__init__(Task, session, **kwargs)
+
+    @expose('/picture/<task_id>', methods=['GET'])
+    def get_detail(self, task_id):
+        task_rows = PictureTask.query.filter_by(task_id=task_id).all()
+        items = []
+        append = items.append
+        for idx, task_row in enumerate(task_rows):
+            item = {'idx': idx + 1, 'link': task_row.link}
+            origin_id = task_row.link.split('/')[-1][:-5]
+            picture_row = Picture.query.filter_by(origin_id=origin_id).first()
+            if picture_row:
+                title = picture_row.title
+                total = title.split('_')[-1][1:-1]
+                cnt = Picture.query.filter_by(origin_id=origin_id).count()
+                item['link'] = Markup(
+                    f'<a href="{task_row.link}" target="_blank">'
+                    f'{title[:-len(total) - 3]}</a>')
+                item['complete'] = f'{cnt}/{total}'
+                append(item)
+            else:
+                item['link'] = Markup(
+                    f'<a href="{task_row.link}" target="_blank">'
+                    f'{task_row.link}</a>')
+                item['complete'] = '/'
+                append(item)
+        return self.render('picture_task_detail.html', items=items)
 
 
 class NovelTaskView(BaseView):

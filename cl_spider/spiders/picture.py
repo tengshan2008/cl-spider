@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Set, Text, Tuple
 from bs4 import BeautifulSoup
 import dateutil.parser
 from cl_spider.app import db
-from cl_spider.app.models import Picture
+from cl_spider.app.models import Picture, PictureTask
 from cl_spider.config import PICTURE_BUCKET_NAME
 from cl_spider.spiders.file_uploader import IMG_EXTS, Uploader
 from cl_spider.spiders.manager import Manager
@@ -177,6 +177,19 @@ class PictureSpider(Spider):
         finally:
             db.session.close()
 
+    def new_picture_task(self, task_id, links):
+        for link in links:
+            picture_task = PictureTask(task_id=task_id, link=link)
+            db.session.add(picture_task)
+        try:
+            db.session.commit()
+        except Exception as err:
+            db.session.rollback()
+            logger.error(f'picture task execute database has error: {err}')
+            raise err
+        finally:
+            db.session.close()
+
     def save_data(
         self,
         url: Text,
@@ -208,7 +221,8 @@ class PictureSpider(Spider):
 
     @logger.catch
     def get_latest(self, metadata: Optional[Dict[Text, Any]] = None) -> None:
-        task_id = self.new_task('picture', 'P001', list(self.manager.queue))
+        task_id = self.new_task('picture', 'P001')
+        self.new_picture_task(task_id, list(self.manager.queue))
         # 是否有待取的 URL
         while self.manager.has_new_url():
             # 获取一个新 URL
